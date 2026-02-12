@@ -47,6 +47,7 @@
         .input-inline { padding: 4px; font-size: 10px; width: 140px; border: 1px solid #ccc; border-radius: 3px; }
         .btn-main { border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; color: white; font-weight: bold; font-size: 10px; }
     </style>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -79,6 +80,53 @@
 </div>
 
 <script>
+
+	// --- CONFIGURATION SUPABASE ---
+const SUPABASE_URL = 'https://osxbonycajarenugqsfa.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_oZNXxeJO2yNfZyzhJx3scQ_UipEH136';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let schoolData = [];
+let activeMonth = null;
+
+// --- FONCTIONS DE SYNCHRONISATION ---
+
+// Charger les données depuis le Cloud
+async function loadFromCloud() {
+    const { data, error } = await supabase
+        .from('absences_data')
+        .select('content')
+        .single();
+    
+    if (data) {
+        schoolData = data.content;
+        renderAll();
+    }
+}
+
+// Sauvegarder vers le Cloud
+async function save() {
+    // On met à jour l'unique ligne de données (ID 1 par exemple)
+    const { error } = await supabase
+        .from('absences_data')
+        .upsert({ id: 1, content: schoolData });
+    
+    if (error) console.error("Erreur sauvegarde:", error);
+}
+
+// Lancer le chargement au démarrage
+loadFromCloud();
+
+// Optionnel : Actualisation en temps réel (Realtime)
+supabase
+    .channel('schema-db-changes')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'absences_data' }, 
+    payload => {
+        schoolData = payload.new.content;
+        renderAll();
+    })
+    .subscribe();
+	
     const monthConfigs = [
         { name: "Septembre", m: 8, y: 2025 }, { name: "Octobre", m: 9, y: 2025 }, { name: "Novembre", m: 10, y: 2025 },
         { name: "Décembre", m: 11, y: 2025 }, { name: "Janvier", m: 0, y: 2026 }, { name: "Février", m: 1, y: 2026 },
