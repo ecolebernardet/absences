@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Suivi Absences - École 2025-2026</title>
+    <style>
+        :root { --absent: #e74c3c; --excuse: #f1c40f; --dark: #2c3e50; --light: #f4f7f6; --blue: #3498db; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--light); font-size: 11px; margin: 10px; }
+        .container { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 98vw; margin: auto; overflow-x: auto; }
+        
+        .top-bar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; background: #eee; padding: 8px; border-radius: 5px; }
+        
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; padding: 2px; text-align: center; overflow: hidden; height: 30px; }
+        
+        .month-header { background: var(--dark); color: white; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .month-header:hover { background: var(--blue); }
+        .month-header.active { background: var(--blue); font-weight: bold; }
+
+        .day-col { width: 35px; font-size: 8px; background: #f9f9f9; line-height: 1.2; font-weight: bold; }
+        
+        .col-main { 
+            width: 220px; min-width: 220px; text-align: left; padding-left: 8px; 
+            background: #fff; position: sticky; left: 0; z-index: 10; border-right: 2px solid #ddd; 
+        }
+
+        .drag-handle { cursor: grab; color: #ccc; padding-right: 8px; font-size: 14px; }
+        .class-row { background: #ebf2f7; font-weight: bold; }
+        .class-name-container { display: flex; align-items: center; }
+        
+        .btn-del { color: #e74c3c; cursor: pointer; border: none; background: none; font-weight: bold; margin-left: auto; font-size: 14px; }
+        
+        .cell-abs { cursor: pointer; font-weight: bold; transition: 0.1s; border: 1px solid #eee; }
+        .st-none { background: #fff; color: transparent; }
+        .st-A { background: var(--absent) !important; color: white !important; }
+        .st-Exc { background: var(--excuse) !important; color: black !important; font-size: 9px; }
+        
+        .input-inline { padding: 4px; font-size: 10px; width: 140px; border: 1px solid #ccc; border-radius: 3px; }
+        .btn-main { border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; color: white; font-weight: bold; font-size: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="top-bar">
+        <input type="text" id="newClassName" placeholder="Nom de la classe..." style="padding: 6px;">
+        <button class="btn-main" onclick="addClass()" style="background: var(--dark);">+ Classe</button>
+        <div style="flex-grow: 1; border-left: 1px solid #ccc; margin-left: 10px; padding-left: 10px; display: flex; gap: 5px;">
+            <button class="btn-main" onclick="document.getElementById('importCSV').click()" style="background:#2980b9;">📊 Import CSV</button>
+            <input type="file" id="importCSV" style="display:none" accept=".csv" onchange="importCSV(event)">
+        </div>
+        <button class="btn-main" onclick="exportJSON()" style="background:#3498db;">💾 Sauvegarder</button>
+        <button class="btn-main" onclick="document.getElementById('importFile').click()" style="background:#8e44ad;">📁 Charger</button>
+        <input type="file" id="importFile" style="display:none" onchange="importJSON(event)">
+        <button class="btn-main" onclick="clearAllData()" style="background:#e67e22;">🗑️ Tout effacer</button>
+    </div>
+
+    <table id="absenceTable">
+        <thead>
+            <tr id="monthRow"><th class="col-main">Classes / Élèves</th></tr>
+            <tr id="dayRow"><th class="col-main"></th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    const monthConfigs = [
+        { name: "Septembre", m: 8, y: 2025 }, { name: "Octobre", m: 9, y: 2025 }, { name: "Novembre", m: 10, y: 2025 },
+        { name: "Décembre", m: 11, y: 2025 }, { name: "Janvier", m: 0, y: 2026 }, { name: "Février", m: 1, y: 2026 },
+        { name: "Mars", m: 2, y: 2026 }, { name: "Avril", m: 3, y: 2026 }, { name: "Mai", m: 4, y: 2026 },
+        { name: "Juin", m: 5, y: 2026 }, { name: "Juillet", m: 6, y: 2026 }
+    ];
+
+    const dayLabels = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+    const schoolMonths = monthConfigs.map(conf => {
+        let days = [];
+        let d = new Date(conf.y, conf.m, 1);
+        while (d.getMonth() === conf.m) {
+            if ([1, 2, 4, 5].includes(d.getDay())) {
+                days.push({ num: d.getDate(), label: dayLabels[d.getDay()] });
+            }
+            d.setDate(d.getDate() + 1);
+        }
+        return { name: conf.name, days: days };
+    });
+
+    let schoolData = JSON.parse(localStorage.getItem('ecole_abs_v6')) || [];
+    let activeMonth = null;
+    let dragType = null, dragCIdx = null, dragSIdx = null;
+
+    function save() { localStorage.setItem('ecole_abs_v6', JSON.stringify(schoolData)); }
+
+    function updateStatus(cIdx, sIdx, key) {
+        const st = schoolData[cIdx].students[sIdx];
+        const states = ['', 'A', 'Exc'];
+        let currentVal = st.data[key] || '';
+        let nextIdx = (states.indexOf(currentVal) + 1) % states.length;
+        st.data[key] = states[nextIdx];
+        save();
+        renderAll();
+    }
+
+    function renderHeader() {
+        const mRow = document.getElementById('monthRow');
+        const dRow = document.getElementById('dayRow');
+        while(mRow.cells.length > 1) mRow.deleteCell(1);
+        while(dRow.cells.length > 1) dRow.deleteCell(1);
+
+        schoolMonths.forEach((m, idx) => {
+            if (activeMonth !== null && activeMonth !== idx) return;
+
+            let th = document.createElement('th');
+            th.className = 'month-header' + (activeMonth === idx ? ' active' : '');
+            th.innerText = (activeMonth === idx) ? `⬅ ${m.name}` : m.name;
+            th.onclick = () => { activeMonth = (activeMonth === idx) ? null : idx; renderAll(); };
+            
+            if (activeMonth === idx) {
+                th.colSpan = m.days.length;
+                m.days.forEach(day => {
+                    let dTh = document.createElement('th');
+                    dTh.className = 'day-col';
+                    dTh.innerHTML = `${day.label}<br>${day.num}`;
+                    dRow.appendChild(dTh);
+                });
+            } else {
+                th.colSpan = 1;
+                let emptyTd = document.createElement('th');
+                dRow.appendChild(emptyTd);
+            }
+            mRow.appendChild(th);
+        });
+    }
+
+    function renderBody() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        schoolData.forEach((classe, cIdx) => {
+            let tr = document.createElement('tr');
+            tr.className = 'class-row';
+            tr.draggable = true;
+            tr.ondragstart = () => { dragType='class'; dragCIdx=cIdx; };
+            tr.ondragover = (e) => { e.preventDefault(); if(dragType==='class' && dragCIdx!==cIdx) { 
+                const item = schoolData.splice(dragCIdx, 1)[0]; schoolData.splice(cIdx, 0, item); dragCIdx=cIdx; save(); renderAll(); 
+            }};
+            
+            let html = `<td class="col-main"><div class="class-name-container"><span class="drag-handle">⋮⋮</span><span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;save();renderAll();" style="cursor:pointer">${classe.isOpen?'▼':'▶'} ${classe.name}</span><button class="btn-del" onclick="if(confirm('Supprimer la classe ?')){schoolData.splice(${cIdx},1);save();renderAll();}">×</button></div></td>`;
+            
+            schoolMonths.forEach((m, mIdx) => {
+                if (activeMonth === null || activeMonth === mIdx) {
+                    html += `<td colspan="${activeMonth === mIdx ? m.days.length : 1}"></td>`;
+                }
+            });
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+
+            if(classe.isOpen) {
+                let trIn = document.createElement('tr');
+                let inHtml = `<td class="col-main" style="padding-left:25px; background:#f9f9f9;"><input type="text" class="input-inline" placeholder="+ Nom élève..." onkeypress="if(event.key==='Enter'){classe.students.push({name:this.value, data:{}});save();renderAll();}"></td>`;
+                schoolMonths.forEach((m, mIdx) => {
+                    if (activeMonth === null || activeMonth === mIdx) {
+                        inHtml += `<td colspan="${activeMonth === mIdx ? m.days.length : 1}" style="background:#f9f9f9;"></td>`;
+                    }
+                });
+                trIn.innerHTML = inHtml;
+                tbody.appendChild(trIn);
+
+                classe.students.forEach((st, sIdx) => {
+                    let trSt = document.createElement('tr');
+                    trSt.draggable = true;
+                    trSt.ondragstart = () => { dragType='student'; dragCIdx=cIdx; dragSIdx=sIdx; };
+                    trSt.ondragover = (e) => { e.preventDefault(); if(dragType==='student' && dragCIdx===cIdx && dragSIdx!==sIdx) {
+                        const item = classe.students.splice(dragSIdx, 1)[0]; classe.students.splice(sIdx, 0, item); dragSIdx=sIdx; save(); renderAll();
+                    }};
+
+                    let stHtml = `<td class="col-main" style="display:flex; align-items:center; padding-left:15px; color:#2980b9;"><span class="drag-handle">⋮⋮</span><span style="flex-grow:1">${st.name}</span><button class="btn-del" style="color:#ccc" onclick="schoolData[${cIdx}].students.splice(${sIdx},1);save();renderAll();">×</button></td>`;
+                    
+                    schoolMonths.forEach((m, mIdx) => {
+                        if (activeMonth === null) {
+                            stHtml += `<td></td>`;
+                        } else if (activeMonth === mIdx) {
+                            m.days.forEach(day => {
+                                let k = mIdx + '-' + day.num;
+                                let val = st.data[k] || '';
+                                stHtml += `<td class="cell-abs st-${val||'none'}" onclick="updateStatus(${cIdx}, ${sIdx}, '${k}')">${val}</td>`;
+                            });
+                        }
+                    });
+                    trSt.innerHTML = stHtml;
+                    tbody.appendChild(trSt);
+                });
+            }
+        });
+    }
+
+    function addClass() { const v = document.getElementById('newClassName').value; if(v){ schoolData.push({name:v, students:[], isOpen:true}); save(); renderAll(); document.getElementById('newClassName').value=''; } }
+    function clearAllData() { if(confirm("Supprimer toutes les données ?")){ schoolData=[]; save(); renderAll(); } }
+    function exportJSON() { const a = document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(schoolData)); a.download="absences_ecole.json"; a.click(); }
+    function importJSON(e) { const r = new FileReader(); r.onload=(ev)=>{ schoolData=JSON.parse(ev.target.result); save(); renderAll(); }; r.readAsText(e.target.files[0]); }
+    function importCSV(e) { const r = new FileReader(); r.onload=(ev)=>{ ev.target.result.split('\n').forEach(l=>{ const p=l.split(/[;,]/); if(p.length>1){ let c=schoolData.find(x=>x.name.toLowerCase()===p[0].trim().toLowerCase()); if(!c){c={name:p[0].trim(), students:[], isOpen:true}; schoolData.push(c);} c.students.push({name:p[1].trim(), data:{}}); }}); save(); renderAll(); }; r.readAsText(e.target.files[0]); }
+
+    function renderAll() { renderHeader(); renderBody(); }
+    renderAll();
+</script>
+</body>
+</html>
