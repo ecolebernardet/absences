@@ -2,72 +2,53 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Suivi Absences - École 2025-2026</title>
+    <title>Suivi Absences - École Collaboratif</title>
     <style>
         :root { --absent: #e74c3c; --excuse: #f1c40f; --dark: #2c3e50; --light: #f4f7f6; --blue: #3498db; }
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--light); font-size: 11px; margin: 10px; }
         .container { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 98vw; margin: auto; overflow-x: auto; }
-        
         .top-bar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; background: #eee; padding: 8px; border-radius: 5px; }
-        
         table { border-collapse: collapse; width: 100%; table-layout: fixed; }
         th, td { border: 1px solid #ddd; padding: 2px; text-align: center; overflow: hidden; height: 30px; }
-        
         .month-header { background: var(--dark); color: white; cursor: pointer; font-size: 12px; transition: 0.2s; }
         .month-header:hover { background: var(--blue); }
         .month-header.active { background: var(--blue); font-weight: bold; }
-
         .day-col { width: 35px; font-size: 8px; background: #f9f9f9; line-height: 1.2; font-weight: bold; }
-        
-        .col-main { 
-            width: 220px; min-width: 220px; text-align: left; padding-left: 8px; 
-            background: #fff; position: sticky; left: 0; z-index: 10; border-right: 2px solid #ddd; 
-        }
-
+        .col-main { width: 220px; min-width: 220px; text-align: left; padding-left: 8px; background: #fff; position: sticky; left: 0; z-index: 10; border-right: 2px solid #ddd; }
         .drag-handle { cursor: grab; color: #ccc; padding-right: 8px; font-size: 14px; }
         .class-row { background: #ebf2f7; font-weight: bold; }
         .class-name-container { display: flex; align-items: center; }
-        
         .btn-del { color: #e74c3c; cursor: pointer; border: none; background: none; font-weight: bold; margin-left: auto; font-size: 14px; }
-        
         .cell-abs { cursor: pointer; font-weight: bold; transition: 0.1s; border: 1px solid #eee; }
         .st-none { background: #fff; color: transparent; }
         .st-A { background: var(--absent) !important; color: white !important; }
         .st-Exc { background: var(--excuse) !important; color: black !important; font-size: 9px; }
-        
-		.stats-badge { font-size: 9px; background: #fff; padding: 2px 6px; border-radius: 10px; margin-left: 10px;
-			border: 1px solid #ccc; color: #333; font-weight: normal; }
-			
-		.stats-footer { margin-top: 20px; padding: 15px; background: var(--dark); color: white;
-			border-radius: 8px; display: flex; gap: 20px; justify-content: center; font-size: 13px; }
-			
-		.stats-footer b { color: var(--blue); font-size: 15px; }
-
+        .stats-badge { font-size: 9px; background: #fff; padding: 2px 6px; border-radius: 10px; margin-left: 10px; border: 1px solid #ccc; color: #333; font-weight: normal; }
+        .stats-footer { margin-top: 20px; padding: 15px; background: var(--dark); color: white; border-radius: 8px; display: flex; gap: 20px; justify-content: center; font-size: 13px; }
+        .stats-footer b { color: var(--blue); font-size: 15px; }
         .input-inline { padding: 4px; font-size: 10px; width: 140px; border: 1px solid #ccc; border-radius: 3px; }
         .btn-main { border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; color: white; font-weight: bold; font-size: 10px; }
+        .sync-status { font-size: 10px; color: #666; font-style: italic; }
     </style>
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
 <div class="container">
     <div class="top-bar">
-		<input type="text" id="newClassName" placeholder="Nom de la classe..." style="padding: 6px;">
-		<button class="btn-main" onclick="addClass()" style="background: var(--dark);">+ Classe</button>
-    
-		<button class="btn-main" onclick="toggleAllClasses(true)" style="background: #27ae60; margin-left: 10px;">📂 Tout ouvrir</button>
-		<button class="btn-main" onclick="toggleAllClasses(false)" style="background: #7f8c8d;">📁 Tout fermer</button>
+        <input type="text" id="newClassName" placeholder="Nom de la classe..." style="padding: 6px;">
+        <button class="btn-main" onclick="addClass()" style="background: var(--dark);">+ Classe</button>
+        <button class="btn-main" onclick="toggleAllClasses(true)" style="background: #27ae60; margin-left: 10px;">📂 Tout ouvrir</button>
+        <button class="btn-main" onclick="toggleAllClasses(false)" style="background: #7f8c8d;">📁 Tout fermer</button>
+        
+        <span id="syncIndicator" class="sync-status">Initialisation...</span>
 
-		<div style="flex-grow: 1; border-left: 1px solid #ccc; margin-left: 10px; padding-left: 10px; display: flex; gap: 5px;">
-			<button class="btn-main" onclick="document.getElementById('importCSV').click()" style="background:#2980b9;">📊 Import CSV</button>
-			<input type="file" id="importCSV" style="display:none" accept=".csv" onchange="importCSV(event)">
-		</div>
-		<button class="btn-main" onclick="exportJSON()" style="background:#3498db;">💾 Sauvegarder</button>
-		<button class="btn-main" onclick="document.getElementById('importFile').click()" style="background:#8e44ad;">📁 Charger</button>
-		<input type="file" id="importFile" style="display:none" onchange="importJSON(event)">
-		<button class="btn-main" onclick="clearAllData()" style="background:#e67e22;">🗑️ Tout effacer</button>
-	</div>
+        <div style="flex-grow: 1; border-left: 1px solid #ccc; margin-left: 10px; padding-left: 10px; display: flex; gap: 5px;">
+            <button class="btn-main" onclick="exportJSON()" style="background:#3498db;">💾 Backup JSON</button>
+        </div>
+        <button class="btn-main" onclick="clearAllData()" style="background:#e67e22;">🗑️ Tout effacer</button>
+    </div>
 
     <table id="absenceTable">
         <thead>
@@ -75,58 +56,44 @@
             <tr id="dayRow"><th class="col-main"></th></tr>
         </thead>
         <tbody id="tableBody"></tbody>
-   </table>
+    </table>
     <div id="globalStats" class="stats-footer"></div>
 </div>
 
 <script>
+    // --- CONFIGURATION ---
+    const SUPABASE_URL = 'https://osxbonycajarenugqsfa.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_oZNXxeJO2yNfZyzhJx3scQ_UipEH136';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-	// --- CONFIGURATION SUPABASE ---
-const SUPABASE_URL = 'https://osxbonycajarenugqsfa.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_oZNXxeJO2yNfZyzhJx3scQ_UipEH136';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let schoolData = [];
+    let activeMonth = null;
+    let dragType = null, dragCIdx = null, dragSIdx = null;
 
-let schoolData = [];
-let activeMonth = null;
+    // --- LOGIQUE CLOUD ---
 
-// --- FONCTIONS DE SYNCHRONISATION ---
-
-// Charger les données depuis le Cloud
-async function loadFromCloud() {
-    const { data, error } = await supabase
-        .from('absences_data')
-        .select('content')
-        .single();
-    
-    if (data) {
-        schoolData = data.content;
-        renderAll();
+    async function loadFromCloud() {
+        try {
+            const { data, error } = await _supabase.from('absences_data').select('content').eq('id', 1).single();
+            if (data) {
+                schoolData = data.content || [];
+                document.getElementById('syncIndicator').innerText = "✅ Connecté";
+                renderAll();
+            }
+        } catch (e) { console.error(e); }
     }
-}
 
-// Sauvegarder vers le Cloud
-async function save() {
-    // On met à jour l'unique ligne de données (ID 1 par exemple)
-    const { error } = await supabase
-        .from('absences_data')
-        .upsert({ id: 1, content: schoolData });
-    
-    if (error) console.error("Erreur sauvegarde:", error);
-}
+    async function save() {
+        document.getElementById('syncIndicator').innerText = "☁️ Sauvegarde...";
+        const { error } = await _supabase.from('absences_data').upsert({ id: 1, content: schoolData });
+        if (!error) document.getElementById('syncIndicator').innerText = "✅ Synchronisé";
+    }
 
-// Lancer le chargement au démarrage
-loadFromCloud();
+    _supabase.channel('changes').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'absences_data' }, 
+        payload => { schoolData = payload.new.content; renderAll(); }
+    ).subscribe();
 
-// Optionnel : Actualisation en temps réel (Realtime)
-supabase
-    .channel('schema-db-changes')
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'absences_data' }, 
-    payload => {
-        schoolData = payload.new.content;
-        renderAll();
-    })
-    .subscribe();
-	
+    // --- CALENDRIER ---
     const monthConfigs = [
         { name: "Septembre", m: 8, y: 2025 }, { name: "Octobre", m: 9, y: 2025 }, { name: "Novembre", m: 10, y: 2025 },
         { name: "Décembre", m: 11, y: 2025 }, { name: "Janvier", m: 0, y: 2026 }, { name: "Février", m: 1, y: 2026 },
@@ -147,12 +114,7 @@ supabase
         return { name: conf.name, days: days };
     });
 
-    let schoolData = JSON.parse(localStorage.getItem('ecole_abs_v6')) || [];
-    let activeMonth = null;
-    let dragType = null, dragCIdx = null, dragSIdx = null;
-
-    function save() { localStorage.setItem('ecole_abs_v6', JSON.stringify(schoolData)); }
-
+    // --- ACTIONS ---
     function updateStatus(cIdx, sIdx, key) {
         const st = schoolData[cIdx].students[sIdx];
         const states = ['', 'A', 'Exc'];
@@ -171,12 +133,10 @@ supabase
 
         schoolMonths.forEach((m, idx) => {
             if (activeMonth !== null && activeMonth !== idx) return;
-
             let th = document.createElement('th');
             th.className = 'month-header' + (activeMonth === idx ? ' active' : '');
             th.innerText = (activeMonth === idx) ? `⬅ ${m.name}` : m.name;
             th.onclick = () => { activeMonth = (activeMonth === idx) ? null : idx; renderAll(); };
-            
             if (activeMonth === idx) {
                 th.colSpan = m.days.length;
                 m.days.forEach(day => {
@@ -187,136 +147,87 @@ supabase
                 });
             } else {
                 th.colSpan = 1;
-                let emptyTd = document.createElement('th');
-                dRow.appendChild(emptyTd);
+                dRow.appendChild(document.createElement('th'));
             }
             mRow.appendChild(th);
         });
     }
 
     function renderBody() {
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '';
-    schoolData.forEach((classe, cIdx) => {
-        let tr = document.createElement('tr');
-        tr.className = 'class-row';
-        tr.draggable = true;
-        tr.ondragstart = () => { dragType='class'; dragCIdx=cIdx; };
-        tr.ondragover = (e) => { e.preventDefault(); if(dragType==='class' && dragCIdx!==cIdx) { 
-            const item = schoolData.splice(dragCIdx, 1)[0]; schoolData.splice(cIdx, 0, item); dragCIdx=cIdx; save(); renderAll(); 
-        }};
-
-        // Calcul des statistiques pour la classe
-        let countA = 0;
-        let countExc = 0;
-        classe.students.forEach(st => {
-            Object.keys(st.data).forEach(key => {
-                // Si un mois est actif, on ne compte que les données de ce mois (format clé: "mIdx-day")
-                if (activeMonth === null || key.startsWith(activeMonth + '-')) {
-                    if (st.data[key] === 'A') countA++;
-                    if (st.data[key] === 'Exc') countExc++;
-                }
-            });
-        });
-
-        let statsHtml = `<span class="stats-badge">Abs: <b>${countA}</b> | Exc: <b>${countExc}</b></span>`;
-        
-        let html = `<td class="col-main"><div class="class-name-container">
-            <span class="drag-handle">⋮⋮</span>
-            <span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;save();renderAll();" style="cursor:pointer">
-                ${classe.isOpen?'▼':'▶'} ${classe.name}
-            </span>
-            ${statsHtml}
-            <button class="btn-del" onclick="if(confirm('Supprimer la classe ?')){schoolData.splice(${cIdx},1);save();renderAll();}">×</button>
-        </div></td>`;
-        
-        schoolMonths.forEach((m, mIdx) => {
-            if (activeMonth === null || activeMonth === mIdx) {
-                html += `<td colspan="${activeMonth === mIdx ? m.days.length : 1}"></td>`;
-            }
-        });
-        tr.innerHTML = html;
-        tbody.appendChild(tr);
-
-        if(classe.isOpen) {
-            // ... (le reste du code pour les étudiants demeure inchangé)
-            let trIn = document.createElement('tr');
-            let inHtml = `<td class="col-main" style="padding-left:25px; background:#f9f9f9;"><input type="text" class="input-inline" placeholder="+ Nom élève..." onkeypress="if(event.key==='Enter'){schoolData[${cIdx}].students.push({name:this.value, data:{}});save();renderAll();}"></td>`;
-            schoolMonths.forEach((m, mIdx) => {
-                if (activeMonth === null || activeMonth === mIdx) {
-                    inHtml += `<td colspan="${activeMonth === mIdx ? m.days.length : 1}" style="background:#f9f9f9;"></td>`;
-                }
-            });
-            trIn.innerHTML = inHtml;
-            tbody.appendChild(trIn);
-
-            classe.students.forEach((st, sIdx) => {
-                let trSt = document.createElement('tr');
-                trSt.draggable = true;
-                trSt.ondragstart = () => { dragType='student'; dragCIdx=cIdx; dragSIdx=sIdx; };
-                trSt.ondragover = (e) => { e.preventDefault(); if(dragType==='student' && dragCIdx===cIdx && dragSIdx!==sIdx) {
-                    const item = classe.students.splice(dragSIdx, 1)[0]; classe.students.splice(sIdx, 0, item); dragSIdx=sIdx; save(); renderAll();
-                }};
-
-                let stHtml = `<td class="col-main" style="display:flex; align-items:center; padding-left:15px; color:#2980b9;"><span class="drag-handle">⋮⋮</span><span style="flex-grow:1">${st.name}</span><button class="btn-del" style="color:#ccc" onclick="schoolData[${cIdx}].students.splice(${sIdx},1);save();renderAll();">×</button></td>`;
-                
-                schoolMonths.forEach((m, mIdx) => {
-                    if (activeMonth === null) {
-                        stHtml += `<td></td>`;
-                    } else if (activeMonth === mIdx) {
-                        m.days.forEach(day => {
-                            let k = mIdx + '-' + day.num;
-                            let val = st.data[k] || '';
-                            stHtml += `<td class="cell-abs st-${val||'none'}" onclick="updateStatus(${cIdx}, ${sIdx}, '${k}')">${val}</td>`;
-                        });
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        schoolData.forEach((classe, cIdx) => {
+            let tr = document.createElement('tr');
+            tr.className = 'class-row';
+            let countA = 0, countExc = 0;
+            classe.students.forEach(st => {
+                Object.keys(st.data).forEach(key => {
+                    if (activeMonth === null || key.startsWith(activeMonth + '-')) {
+                        if (st.data[key] === 'A') countA++;
+                        if (st.data[key] === 'Exc') countExc++;
                     }
                 });
-                trSt.innerHTML = stHtml;
-                tbody.appendChild(trSt);
             });
-        }
-    });
-}
-	
-    function addClass() { const v = document.getElementById('newClassName').value; if(v){ schoolData.push({name:v, students:[], isOpen:true}); save(); renderAll(); document.getElementById('newClassName').value=''; } }
-    function clearAllData() { if(confirm("Supprimer toutes les données ?")){ schoolData=[]; save(); renderAll(); } }
-    function exportJSON() { const a = document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(schoolData)); a.download="absences_ecole.json"; a.click(); }
-    function importJSON(e) { const r = new FileReader(); r.onload=(ev)=>{ schoolData=JSON.parse(ev.target.result); save(); renderAll(); }; r.readAsText(e.target.files[0]); }
-    function importCSV(e) { const r = new FileReader(); r.onload=(ev)=>{ ev.target.result.split('\n').forEach(l=>{ const p=l.split(/[;,]/); if(p.length>1){ let c=schoolData.find(x=>x.name.toLowerCase()===p[0].trim().toLowerCase()); if(!c){c={name:p[0].trim(), students:[], isOpen:true}; schoolData.push(c);} c.students.push({name:p[1].trim(), data:{}}); }}); save(); renderAll(); }; r.readAsText(e.target.files[0]); }
 
-	function toggleAllClasses(open) { schoolData.forEach(classe => { classe.isOpen = open; });
-    save();
-    renderAll();
-}
-	
-    function renderAll() { 
-    renderHeader(); 
-    renderBody(); 
-    
-    // Calcul Global
-    let totalA = 0;
-    let totalExc = 0;
-    
-    schoolData.forEach(classe => {
-        classe.students.forEach(st => {
-            Object.keys(st.data).forEach(key => {
-                if (activeMonth === null || key.startsWith(activeMonth + '-')) {
-                    if (st.data[key] === 'A') totalA++;
-                    if (st.data[key] === 'Exc') totalExc++;
-                }
+            let html = `<td class="col-main"><div class="class-name-container">
+                <span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;renderAll();" style="cursor:pointer">${classe.isOpen?'▼':'▶'} ${classe.name}</span>
+                <span class="stats-badge">Abs: ${countA} | Exc: ${countExc}</span>
+                <button class="btn-del" onclick="if(confirm('Supprimer la classe ?')){schoolData.splice(${cIdx},1);save();renderAll();}">×</button>
+            </div></td>`;
+            
+            schoolMonths.forEach((m, mIdx) => {
+                if (activeMonth === null || activeMonth === mIdx) html += `<td colspan="${activeMonth === mIdx ? m.days.length : 1}"></td>`;
             });
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+
+            if(classe.isOpen) {
+                let trIn = document.createElement('tr');
+                let inHtml = `<td class="col-main" style="padding-left:25px; background:#f9f9f9;"><input type="text" class="input-inline" placeholder="+ Nom élève..." onkeypress="if(event.key==='Enter'){schoolData[${cIdx}].students.push({name:this.value, data:{}});save();renderAll();}"></td>`;
+                schoolMonths.forEach((m, mIdx) => {
+                    if (activeMonth === null || activeMonth === mIdx) inHtml += `<td colspan="${activeMonth === mIdx ? m.days.length : 1}" style="background:#f9f9f9;"></td>`;
+                });
+                trIn.innerHTML = inHtml;
+                tbody.appendChild(trIn);
+
+                classe.students.forEach((st, sIdx) => {
+                    let trSt = document.createElement('tr');
+                    let stHtml = `<td class="col-main" style="display:flex; align-items:center; padding-left:15px; color:#2980b9;"><span style="flex-grow:1">${st.name}</span><button class="btn-del" style="color:#ccc" onclick="schoolData[${cIdx}].students.splice(${sIdx},1);save();renderAll();">×</button></td>`;
+                    schoolMonths.forEach((m, mIdx) => {
+                        if (activeMonth === null) stHtml += `<td></td>`;
+                        else if (activeMonth === mIdx) {
+                            m.days.forEach(day => {
+                                let k = mIdx + '-' + day.num;
+                                let val = st.data[k] || '';
+                                stHtml += `<td class="cell-abs st-${val||'none'}" onclick="updateStatus(${cIdx}, ${sIdx}, '${k}')">${val}</td>`;
+                            });
+                        }
+                    });
+                    trSt.innerHTML = stHtml;
+                    tbody.appendChild(trSt);
+                });
+            }
         });
-    });
+    }
 
-    const label = activeMonth !== null ? `Totaux pour ${schoolMonths[activeMonth].name} :` : "Totaux cumulés année :";
-    document.getElementById('globalStats').innerHTML = `
-        <span>${label}</span>
-        <span>Absences : <b>${totalA}</b></span>
-        <span>Excuses : <b>${totalExc}</b></span>
-    `;
-}
+    function renderAll() {
+        renderHeader();
+        renderBody();
+        let tA = 0, tExc = 0;
+        schoolData.forEach(c => c.students.forEach(s => Object.keys(s.data).forEach(k => {
+            if (activeMonth === null || k.startsWith(activeMonth + '-')) {
+                if (s.data[k] === 'A') tA++; if (s.data[k] === 'Exc') tExc++;
+            }
+        })));
+        document.getElementById('globalStats').innerHTML = `<span>Totaux :</span><span>Absences : <b>${tA}</b></span><span>Excuses : <b>${tExc}</b></span>`;
+    }
 
-    renderAll();
+    function addClass() { const v = document.getElementById('newClassName').value; if(v){ schoolData.push({name:v, students:[], isOpen:true}); save(); renderAll(); document.getElementById('newClassName').value=''; } }
+    function clearAllData() { if(confirm("Supprimer tout ?")){ schoolData=[]; save(); renderAll(); } }
+    function exportJSON() { const a = document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(schoolData)); a.download="backup.json"; a.click(); }
+    function toggleAllClasses(open) { schoolData.forEach(c => c.isOpen = open); renderAll(); }
+
+    loadFromCloud();
 </script>
 </body>
 </html>
