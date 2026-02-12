@@ -39,6 +39,8 @@
     <div class="top-bar">
         <input type="text" id="newClassName" placeholder="Nom de la classe..." style="padding: 6px;">
         <button class="btn-main" onclick="addClass()" style="background: var(--dark);">+ Classe</button>
+		<button class="btn-main" onclick="document.getElementById('importCSV').click()" style="background:#2980b9;">📊 Import CSV</button>
+		<input type="file" id="importCSV" style="display:none" accept=".csv" onchange="importCSV(event)">
         <button class="btn-main" onclick="toggleAllClasses(true)" style="background: #27ae60; margin-left: 10px;">📂 Tout ouvrir</button>
         <button class="btn-main" onclick="toggleAllClasses(false)" style="background: #7f8c8d;">📁 Tout fermer</button>
         
@@ -222,6 +224,31 @@
         document.getElementById('globalStats').innerHTML = `<span>Totaux :</span><span>Absences : <b>${tA}</b></span><span>Excuses : <b>${tExc}</b></span>`;
     }
 
+	function importCSV(e) {
+    const r = new FileReader();
+    r.onload = (ev) => {
+        const lines = ev.target.result.split('\n');
+        lines.forEach(l => {
+            const p = l.split(/[;,]/); // Gère les virgules ou points-virgules
+            if (p.length > 1) {
+                let className = p[0].trim();
+                let studentName = p[1].trim();
+                
+                // On cherche si la classe existe déjà
+                let c = schoolData.find(x => x.name.toLowerCase() === className.toLowerCase());
+                if (!c) {
+                    c = { name: className, students: [], isOpen: true };
+                    schoolData.push(c);
+                }
+                // On ajoute l'élève
+                c.students.push({ name: studentName, data: {} });
+            }
+        });
+        save();      // Envoie les nouvelles classes/élèves sur Supabase
+        renderAll(); // Met à jour l'affichage
+    };
+    r.readAsText(e.target.files[0]);
+}
     function addClass() { const v = document.getElementById('newClassName').value; if(v){ schoolData.push({name:v, students:[], isOpen:true}); save(); renderAll(); document.getElementById('newClassName').value=''; } }
     function clearAllData() { if(confirm("Supprimer tout ?")){ schoolData=[]; save(); renderAll(); } }
     function exportJSON() { const a = document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(schoolData)); a.download="backup.json"; a.click(); }
