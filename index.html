@@ -389,25 +389,71 @@
         const doc = new jsPDF('p', 'mm', 'a4');
         const monthName = monthConfigs[activeMonth].name;
         const year = monthConfigs[activeMonth].y;
-        doc.setFontSize(14); doc.text(`Détail Absences : ${monthName} ${year}`, 14, 12);
+
+        doc.setFontSize(14); 
+        doc.text(`Bilan des Absences : ${monthName} ${year}`, 14, 12);
+
         let tableRows = [];
-        [...schoolData].sort((a,b)=>a.name.localeCompare(b.name)).forEach(classe => {
-            let abs = [];
-            classe.students.forEach(st => {
-                let dA = [], dE = [];
-                Object.keys(st.data).filter(k=>k.startsWith(activeMonth+'-')).forEach(k=>{
-                    if(st.data[k]==='A') dA.push(k.split('-')[1]);
-                    if(st.data[k]==='Exc') dE.push(k.split('-')[1]);
+        const sortedClasses = [...schoolData].sort((a, b) => a.name.localeCompare(b.name));
+
+        sortedClasses.forEach(classe => {
+            let classStudentsRows = [];
+            const sortedStudents = [...classe.students].sort((a, b) => a.name.localeCompare(b.name));
+
+            sortedStudents.forEach(st => {
+                let datesA = [], datesExc = [];
+                Object.keys(st.data).filter(k => k.startsWith(activeMonth + '-')).forEach(k => {
+                    const day = k.split('-')[1];
+                    if (st.data[k] === 'A') datesA.push(parseInt(day));
+                    if (st.data[k] === 'Exc') datesExc.push(parseInt(day));
                 });
-                if(dA.length || dE.length) abs.push([st.name, `${dA.length}A ${dE.length}E`, `A:${dA.join(',')} Exc:${dE.join(',')}`]);
+
+                const allAbsenceDates = [...datesA, ...datesExc].sort((a, b) => a - b);
+                const totalAbsences = allAbsenceDates.length;
+
+                if (totalAbsences > 0) {
+                    let texteAbs = totalAbsences > 1 ? "absences" : "absence";
+                    let detailTexte = `${totalAbsences} ${texteAbs}`;
+                    
+                    detailTexte += ` (${allAbsenceDates.join(', ')})`;
+
+                    // On ne précise les excusées que si elles sont > 0
+                    if (datesExc.length > 0) {
+                        let texteExc = datesExc.length > 1 ? "excusées" : "excusée";
+                        detailTexte += `, dont ${datesExc.length} ${texteExc}`;
+                        
+                        datesExc.sort((a, b) => a - b);
+                        detailTexte += ` (${datesExc.join(', ')})`;
+                    }
+
+                    classStudentsRows.push([st.name, detailTexte]);
+                }
             });
-            if(abs.length){
-                tableRows.push([{content: `CLASSE : ${classe.name}`, colSpan:3, styles:{fillColor:[240,240,240], fontStyle:'bold'}}]);
-                abs.sort((a,b)=>a[0].localeCompare(b[0])).forEach(row => tableRows.push(row));
+
+            if (classStudentsRows.length > 0) {
+                tableRows.push([{ 
+                    content: `CLASSE : ${classe.name}`, 
+                    colSpan: 2, 
+                    styles: { fillColor: [230, 230, 230], fontStyle: 'bold' } 
+                }]);
+                classStudentsRows.forEach(row => tableRows.push(row));
             }
         });
-        doc.autoTable({ startY: 20, head: [['Élève', 'Total', 'Dates']], body: tableRows, theme:'grid', styles:{fontSize:7, cellPadding:0.7} });
-        doc.save(`Absences_${monthName}.pdf`);
+
+        doc.autoTable({
+            startY: 20,
+            head: [['Élève', 'Détail des absences']],
+            body: tableRows,
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 3 },
+            headStyles: { fillColor: [44, 62, 80] },
+            columnStyles: {
+                0: { cellWidth: 50, fontStyle: 'bold' },
+                1: { cellWidth: 'auto' }
+            }
+        });
+
+        doc.save(`Bilan_Absences_${monthName}_${year}.pdf`);
     }
 
     async function showDailySummary(mIdx, dNum, mName) {
