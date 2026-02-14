@@ -597,34 +597,43 @@ window.onclick = function(event) {
     }
 
     function refreshSchoolMonths() {
-        schoolMonths = monthConfigs.map((conf) => {
-            let days = []; 
-            let d = new Date(conf.y, conf.m, 1);
-            while (d.getMonth() === conf.m) { 
-                const isWorkDay = [1, 2, 4, 5].includes(d.getDay());
-                const isVacation = excludedDates.some(v => {
-    // On convertit les chaînes YYYY-MM-DD en objets Date locaux
-    // .replace(/-/g, '/') est crucial pour éviter le décalage UTC
-    const start = new Date(v.start.replace(/-/g, '/'));
-    const end = new Date(v.end.replace(/-/g, '/'));
+    console.log("Config Mars:", monthConfigs[6]); 
+console.log("Config Avril:", monthConfigs[7]);
+	schoolMonths = monthConfigs.map((conf) => {
+        let days = []; 
+        // On crée une date de référence pour le 1er du mois à midi
+        let d = new Date(conf.y, conf.m, 1, 12, 0, 0);
 
-    // On crée la date du jour à tester
-    const current = new Date(conf.y, conf.m, d.getDate());
+        while (d.getMonth() === conf.m) { 
+            const dayNum = d.getDate();
+            const dayOfWeek = d.getDay();
+            
+            // 1. Définir si c'est un jour ouvré (Lun, Mar, Jeu, Ven)
+            const isWorkDay = [1, 2, 4, 5].includes(dayOfWeek);
+            
+            // 2. Vérifier si c'est une période de vacances
+            const isVacation = excludedDates.some(v => {
+                // On compare uniquement les chaînes YYYY-MM-DD pour être infaillible
+                // Cela évite tout problème d'objet Date ou de fuseau horaire
+                const dateString = `${conf.y}-${String(conf.m + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                return dateString >= v.start && dateString <= v.end;
+            });
 
-    // COMPARISON STRICTE SANS LES HEURES :
-    // On remet tout à minuit pour ne comparer que le jour, le mois et l'année
-    start.setHours(0,0,0,0);
-    end.setHours(0,0,0,0);
-    current.setHours(0,0,0,0);
-
-    return current >= start && current <= end;
-});
-                if (isWorkDay && !isVacation) days.push({ num: d.getDate(), label: dayLabels[d.getDay()] }); 
-                d.setDate(d.getDate() + 1); 
+            // 3. Ajouter le jour s'il est ouvré et NON exclu
+            if (isWorkDay && !isVacation) {
+                days.push({ 
+                    num: dayNum, 
+                    label: dayLabels[dayOfWeek] 
+                }); 
             }
-            return { name: conf.name, days };
-        });
-    }
+
+            // Passer au jour suivant en forçant midi pour éviter le saut d'heure de Mars/Avril
+            d.setDate(d.getDate() + 1);
+            d.setHours(12, 0, 0, 0);
+        }
+        return { name: conf.name, days };
+    });
+}
 
     function addClass() { 
         const v = document.getElementById('newClassName').value; 
@@ -703,16 +712,19 @@ window.onclick = function(event) {
 
     // Fonction utilitaire corrigée pour éviter les bugs de fuseaux horaires
     const isDayExcluded = (mIdx, dayNum) => {
-    const year = monthConfigs[mIdx].y;
-    // On compare des Timestamps à minuit pour éviter tout conflit d'heures
-    const dateToCheck = new Date(year, mIdx, dayNum).setHours(0,0,0,0);
+        const conf = monthConfigs[mIdx]; // On récupère la config complète
+        const year = conf.y;
+        const month = conf.m; // On utilise le VRAI index du mois (2 pour Mars)
+        
+        // On crée la date à vérifier à midi pour éviter les bugs de changement d'heure
+        const dateToCheck = new Date(year, month, dayNum, 12, 0, 0, 0).getTime();
 
-    return excludedDates.some(range => {
-        const start = new Date(range.start.replace(/-/g, '/')).setHours(0, 0, 0, 0);
-        const end = new Date(range.end.replace(/-/g, '/')).setHours(0, 0, 0, 0);
-        return dateToCheck >= start && dateToCheck <= end;
-    });
-};
+        return excludedDates.some(range => {
+            const start = new Date(range.start.replace(/-/g, '/')).setHours(12, 0, 0, 0);
+            const end = new Date(range.end.replace(/-/g, '/')).setHours(12, 0, 0, 0);
+            return dateToCheck >= start && dateToCheck <= end;
+        });
+    };
     
     // Header
     const mRow = document.getElementById('monthRow'); 
