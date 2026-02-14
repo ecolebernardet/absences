@@ -802,18 +802,38 @@ console.log("Config Avril:", monthConfigs[7]);
         
         schoolMonths.forEach((m, mIdx) => { 
             if (activeMonth === null) {
-                let monthA = 0, monthE = 0;
-                classe.students.forEach(st => Object.keys(st.data).forEach(k => {
-                    const [mK, dK] = k.split('-').map(Number);
-                    if (mK === mIdx && !isDayExcluded(mK, dK)) {
-                        if (st.data[k] === 'A') monthA++;
-                        if (st.data[k] === 'Exc') monthE++;
-                    }
-                }));
-                let totalM = monthA + monthE;
-                let content = (totalM > 0) ? `<span class="stats-badge">${totalM}(${monthE})</span>` : "";
-                tr.innerHTML += `<td style="text-align:center;">${content}</td>`;
-            } 
+    let monthA = 0, monthE = 0;
+    // 1. Compter les absences
+    classe.students.forEach(st => Object.keys(st.data).forEach(k => {
+        const [mK, dK] = k.split('-').map(Number);
+        if (mK === mIdx && !isDayExcluded(mK, dK)) {
+            if (st.data[k] === 'A') monthA++;
+            if (st.data[k] === 'Exc') monthE++;
+        }
+    }));
+
+    // 2. Calculer le potentiel (Jours ouvrés du mois x Nombre d'élèves)
+    const nbDays = m.days.filter(d => !isDayExcluded(mIdx, d.num)).length;
+    const nbStudents = classe.students.length;
+    const potentiel = nbDays * nbStudents;
+
+    let statsHtml = "";
+    if (potentiel > 0) {
+        const totalAbs = monthA + monthE;
+        // Calcul des pourcentages
+        const perAbs = ((totalAbs / potentiel) * 100).toFixed(1);
+        const perPres = (100 - perAbs).toFixed(1);
+
+        statsHtml = `
+            <div style="font-size: 10px; line-height: 1.2;">
+                <span style="display:block; margin-bottom:2px;">${totalAbs}(${monthE})</span>
+                <div style="color: #d9534f;">Abs: ${perAbs}%</div>
+                <div style="color: #5cb85c;">Pre: ${perPres}%</div>
+            </div>`;
+    }
+
+    tr.innerHTML += `<td style="text-align:center; vertical-align:middle; padding: 4px 0;">${statsHtml}</td>`;
+}
             else if (activeMonth === mIdx) {
                 m.days.forEach(day => {
                     if (isDayExcluded(mIdx, day.num)) return; // SAUTER LE JOUR
@@ -852,19 +872,44 @@ console.log("Config Avril:", monthConfigs[7]);
                     </div>
                 </td>`;
                 schoolMonths.forEach((m, mIdx) => {
-                    if (activeMonth === mIdx) {
-                        m.days.forEach(day => { 
-                            if (isDayExcluded(mIdx, day.num)) return; // SAUTER LE JOUR
-                            const today = isToday(mIdx, day.num);
-                            if (!isMobile || today) {
-                                let k = mIdx+'-'+day.num; let val = st.data[k]||''; 
-                                let highlight = today ? ' today-highlight' : '';
-                                stHtml += `<td class="cell-abs st-${val||'none'}${highlight}" onclick="updateStatus(${cIdx},${sIdx},'${k}')">${val}</td>`; 
-                            }
-                        });
-                    }
-                    else if (activeMonth === null) stHtml += `<td></td>`;
-                });
+    if (activeMonth === mIdx) {
+        // --- MODE MENSUEL (Ton code actuel) ---
+        m.days.forEach(day => { 
+            if (isDayExcluded(mIdx, day.num)) return;
+            const today = isToday(mIdx, day.num);
+            if (!isMobile || today) {
+                let k = mIdx+'-'+day.num; let val = st.data[k]||''; 
+                let highlight = today ? ' today-highlight' : '';
+                stHtml += `<td class="cell-abs st-${val||'none'}${highlight}" onclick="updateStatus(${cIdx},${sIdx},'${k}')">${val}</td>`; 
+            }
+        });
+    }
+    else if (activeMonth === null) {
+        // --- MODE ANNUEL (Statistiques détaillées par élève) ---
+        let stMonthA = 0, stMonthE = 0;
+        
+        // Calcul des absences de l'élève pour ce mois précis
+        Object.keys(st.data).forEach(k => {
+            const [mK, dK] = k.split('-').map(Number);
+            if (mK === mIdx && !isDayExcluded(mK, dK)) {
+                if (st.data[k] === 'A') stMonthA++;
+                if (st.data[k] === 'Exc') stMonthE++;
+            }
+        });
+
+        let totalSt = stMonthA + stMonthE;
+        let display = "";
+
+        if (totalSt > 0) {
+            // Affichage du total et des excusées entre parenthèses
+            display = `<span class="stats-badge" style="background:#fff; border:1px solid #ccc; color:#333; font-size:10px;">
+                ${totalSt}<span style="font-size:8px; font-weight:normal; opacity:0.7;">(${stMonthE})</span>
+            </span>`;
+        }
+        
+        stHtml += `<td style="text-align:center; background: rgba(0,0,0,0.01);">${display}</td>`;
+    }
+});
                 trSt.innerHTML = stHtml; tbody.appendChild(trSt);
             });
         }
