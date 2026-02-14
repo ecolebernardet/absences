@@ -152,8 +152,6 @@
     .sync-status { font-size: 10px; color: #95a5a6; font-style: italic; }
 
     /* Menu Déroulant Gestion */
-    /* Remplace cette partie dans ton <style> */
-/* On garde le positionnement sous le bouton */
 .dropdown { 
     position: relative; 
     display: inline-flex; 
@@ -172,11 +170,60 @@
     border: 1px solid #ddd;
     margin-top: 5px;
 }
+	
+	/* Modification du style du menu de gestion au survol */
+.gestion-menu button:hover {
+    background-color: var(--blue) !important;
+    color: white !important;
+}
+
+/* Style pour agrandir la police et aérer les liens du menu */
+    
+	#gestionMenu {
+    min-width: 300px; /* Largeur augmentée pour éviter les retours à la ligne */
+    border-radius: 12px; /* Coins plus arrondis pour un look moderne */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15); /* Ombre plus profonde pour le détacher du fond */
+    padding: 8px 0; /* Un peu d'espace en haut et en bas du menu */
+}
+
+/* On s'assure que les liens prennent toute la largeur */
+#gestionMenu a {
+    font-size: 16px;
+    padding: 14px 22px; /* Un peu plus d'espace interne */
+    white-space: nowrap; /* Empêche le texte de passer à la ligne */
+}
+	
+    /* Optionnel : agrandir aussi les icônes pour qu'elles restent proportionnelles */
+    #gestionMenu a i {
+        font-size: 18px;
+        width: 25px; /* Largeur fixe pour aligner parfaitement le texte */
+        text-align: center;
+    }
+	
+	/* Style du menu déroulant au survol des options */
+#gestionMenu a:hover {
+    background-color: var(--blue) !important; /* Fond bleu au survol */
+    color: white !important;                 /* Texte et icône deviennent blancs */
+    text-decoration: none;                   /* Supprime le soulignement éventuel */
+}
+
+/* On s'assure que les icônes changent aussi de couleur au survol */
+#gestionMenu a:hover i {
+    color: white !important;
+}
+
+/* Style spécifique pour les options de RESET au survol (optionnel) */
+/* Si tu veux qu'elles deviennent rouges plutôt que bleues au survol : */
+#gestionMenu a[style*="color:var(--absent)"]:hover {
+    background-color: var(--absent) !important;
+    color: white !important;
+}
 
 /* LA CLASSE QUI COMMANDE L'OUVERTURE */
 .dropdown-content.show { 
     display: block !important; 
 }
+
 
 .dropdown-content a { 
     width: 100%; 
@@ -250,24 +297,24 @@
         <button id="toggleBtn" class="btn-main" onclick="toggleAllClasses()" style="background: var(--gray);">▼ Tout<br>Déplier</button>
         
         <div class="dropdown">
-    <button class="btn-main" style="background:var(--gray)" onclick="toggleGestionMenu(event)">
-        Gestion ▾
-    </button>
+			<button class="btn-main" style="background:var(--blue)" onclick="toggleGestionMenu(event)">
+				<i class="fas fa-cog"></i> Gestion ▾
+			</button>
     
     <div id="gestionMenu" class="dropdown-content">
-        <a href="javascript:void(0)" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Bilan Mensuel PDF</a>
-        <a href="javascript:void(0)" onclick="saveDashboardAsPDF()"><i class="fas fa-chart-line"></i> Bilan Directeur PDF</a>
-        <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
-        <a href="javascript:void(0)" onclick="openVacationModal()"><i class="fas fa-umbrella-beach"></i> Configurer Vacances</a>
-        <a href="javascript:void(0)" onclick="openImportModal()"><i class="fas fa-file-import"></i> Importer / Sauvegarder</a>
-        <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
-        <a href="javascript:void(0)" onclick="resetAnnualAbsences()" style="color:var(--absent)">
-            <i class="fas fa-broom"></i> Effacer toutes les absences
-        </a>
-        <a href="javascript:void(0)" onclick="confirmClearAll()" style="color:var(--absent); font-weight:bold;">
-            <i class="fas fa-trash-alt"></i> RESET TOTAL
-        </a>
-    </div>
+    <a href="javascript:void(0)" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Bilan Mensuel PDF</a>
+    <a href="javascript:void(0)" onclick="saveDashboardAsPDF()"><i class="fas fa-chart-line"></i> Bilan Directeur PDF</a>
+    <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
+    <a href="javascript:void(0)" onclick="openVacationModal()"><i class="fas fa-umbrella-beach"></i> Configurer Vacances</a>
+    <a href="javascript:void(0)" onclick="openImportModal()"><i class="fas fa-file-import"></i> Importer / Sauvegarder</a>
+    <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
+    <a href="javascript:void(0)" onclick="resetAnnualAbsences()" style="color:var(--absent)">
+        <i class="fas fa-broom"></i> Effacer toutes les absences
+    </a>
+    <a href="javascript:void(0)" onclick="confirmClearAll()" style="color:var(--absent); font-weight:bold;">
+        <i class="fas fa-trash-alt"></i> RESET TOTAL
+    </a>
+</div>
 </div>
 		<button onclick="openDashboard()" style="background:var(--dark); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;">
 			📊 Tableau de Bord
@@ -556,9 +603,22 @@ window.onclick = function(event) {
             while (d.getMonth() === conf.m) { 
                 const isWorkDay = [1, 2, 4, 5].includes(d.getDay());
                 const isVacation = excludedDates.some(v => {
-                    const current = new Date(conf.y, conf.m, d.getDate());
-                    return current >= new Date(v.start) && current <= new Date(v.end);
-                });
+    // On convertit les chaînes YYYY-MM-DD en objets Date locaux
+    // .replace(/-/g, '/') est crucial pour éviter le décalage UTC
+    const start = new Date(v.start.replace(/-/g, '/'));
+    const end = new Date(v.end.replace(/-/g, '/'));
+
+    // On crée la date du jour à tester
+    const current = new Date(conf.y, conf.m, d.getDate());
+
+    // COMPARISON STRICTE SANS LES HEURES :
+    // On remet tout à minuit pour ne comparer que le jour, le mois et l'année
+    start.setHours(0,0,0,0);
+    end.setHours(0,0,0,0);
+    current.setHours(0,0,0,0);
+
+    return current >= start && current <= end;
+});
                 if (isWorkDay && !isVacation) days.push({ num: d.getDate(), label: dayLabels[d.getDay()] }); 
                 d.setDate(d.getDate() + 1); 
             }
@@ -640,20 +700,41 @@ window.onclick = function(event) {
     
     function renderAll() {
     const isMobile = window.innerWidth <= 768;
+
+    // Fonction utilitaire corrigée pour éviter les bugs de fuseaux horaires
+    const isDayExcluded = (mIdx, dayNum) => {
+    const year = monthConfigs[mIdx].y;
+    // On compare des Timestamps à minuit pour éviter tout conflit d'heures
+    const dateToCheck = new Date(year, mIdx, dayNum).setHours(0,0,0,0);
+
+    return excludedDates.some(range => {
+        const start = new Date(range.start.replace(/-/g, '/')).setHours(0, 0, 0, 0);
+        const end = new Date(range.end.replace(/-/g, '/')).setHours(0, 0, 0, 0);
+        return dateToCheck >= start && dateToCheck <= end;
+    });
+};
     
     // Header
-    const mRow = document.getElementById('monthRow'); const dRow = document.getElementById('dayRow');
-    while(mRow.cells.length > 1) mRow.deleteCell(1); while(dRow.cells.length > 1) dRow.deleteCell(1);
+    const mRow = document.getElementById('monthRow'); 
+    const dRow = document.getElementById('dayRow');
+    while(mRow.cells.length > 1) mRow.deleteCell(1); 
+    while(dRow.cells.length > 1) dRow.deleteCell(1);
     
     schoolMonths.forEach((m, idx) => {
         if (activeMonth !== null && activeMonth !== idx) return;
-        let th = document.createElement('th'); th.className = 'month-header' + (activeMonth === idx ? ' active' : '');
+        
+        let th = document.createElement('th'); 
+        th.className = 'month-header' + (activeMonth === idx ? ' active' : '');
         th.innerText = (activeMonth === idx) ? `⬅ ${m.name}` : m.name;
         th.onclick = () => { activeMonth = (activeMonth === idx) ? null : idx; renderAll(); };
         
         if (activeMonth === idx) {
-            th.colSpan = isMobile ? 1 : m.days.length;
-            m.days.forEach(day => { 
+            // Filtrage des jours exclus
+            const visibleDays = m.days.filter(d => !isDayExcluded(idx, d.num));
+            
+            th.colSpan = isMobile ? 1 : visibleDays.length;
+            
+            visibleDays.forEach(day => { 
                 const today = isToday(idx, day.num);
                 if (!isMobile || today) {
                     let dTh = document.createElement('th'); 
@@ -663,25 +744,33 @@ window.onclick = function(event) {
                     dRow.appendChild(dTh);
                 }
             });
-        } else { th.colSpan = 1; dRow.appendChild(document.createElement('th')); }
+        } else { 
+            th.colSpan = 1; 
+            dRow.appendChild(document.createElement('th')); 
+        }
         mRow.appendChild(th);
     });
 
     // Body
-    const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
+    const tbody = document.getElementById('tableBody'); 
+    tbody.innerHTML = '';
     let totalA = 0, totalE = 0;
 
     schoolData.forEach((classe, cIdx) => {
-        let tr = document.createElement('tr'); tr.className = 'class-row';
+        let tr = document.createElement('tr'); 
+        tr.className = 'class-row';
         tr.draggable = true;
         tr.ondragstart = () => onClassDragStart(cIdx);
         tr.ondragover = onDragOver; tr.ondragleave = onDragLeave; tr.ondrop = (e) => onDrop(e, cIdx, null);
 
-        // Stats globales pour l'école
+        // Stats globales filtrées
         classe.students.forEach(st => Object.keys(st.data).forEach(k => { 
-            if (activeMonth === null || k.startsWith(activeMonth + '-')) { 
-                if(st.data[k] === 'A') totalA++; 
-                if(st.data[k] === 'Exc') totalE++; 
+            const [mIdx, dNum] = k.split('-').map(Number);
+            if (!isDayExcluded(mIdx, dNum)) {
+                if (activeMonth === null || mIdx === activeMonth) { 
+                    if(st.data[k] === 'A') totalA++; 
+                    if(st.data[k] === 'Exc') totalE++; 
+                }
             }
         }));
 
@@ -701,21 +790,21 @@ window.onclick = function(event) {
         
         schoolMonths.forEach((m, mIdx) => { 
             if (activeMonth === null) {
-                // VUE ANNUELLE : Résumé par mois sur la ligne de classe
                 let monthA = 0, monthE = 0;
                 classe.students.forEach(st => Object.keys(st.data).forEach(k => {
-                    if (k.startsWith(mIdx + '-')) {
+                    const [mK, dK] = k.split('-').map(Number);
+                    if (mK === mIdx && !isDayExcluded(mK, dK)) {
                         if (st.data[k] === 'A') monthA++;
                         if (st.data[k] === 'Exc') monthE++;
                     }
                 }));
                 let totalM = monthA + monthE;
-                let content = (totalM > 0) ? `<span class="stats-badge" style="font-size:9px;">${totalM}(${monthE})</span>` : "";
+                let content = (totalM > 0) ? `<span class="stats-badge">${totalM}(${monthE})</span>` : "";
                 tr.innerHTML += `<td style="text-align:center;">${content}</td>`;
             } 
             else if (activeMonth === mIdx) {
-                // VUE MENSUELLE : Stats quotidiennes sur la ligne de classe
                 m.days.forEach(day => {
+                    if (isDayExcluded(mIdx, day.num)) return; // SAUTER LE JOUR
                     const today = isToday(mIdx, day.num);
                     if (!isMobile || today) {
                         let k = mIdx + '-' + day.num;
@@ -725,9 +814,9 @@ window.onclick = function(event) {
                             if (st.data[k] === 'Exc') dayE++;
                         });
                         let totalDay = dayA + dayE;
-                        let display = (totalDay > 0) ? `<span style="font-size:10px; font-weight:bold; color:var(--dark);">${totalDay}<span style="font-size:8px; color:#d4ac0d; font-weight:normal;">(${dayE})</span></span>` : "";
+                        let display = (totalDay > 0) ? `<span style="font-size:10px; font-weight:bold;">${totalDay}<span style="font-size:8px; font-weight:normal;">(${dayE})</span></span>` : "";
                         let highlight = today ? ' today-highlight' : '';
-                        tr.innerHTML += `<td class="${highlight}" style="text-align:center; vertical-align:middle; border-bottom:1px solid #eee;">${display}</td>`;
+                        tr.innerHTML += `<td class="${highlight}" style="text-align:center;">${display}</td>`;
                     }
                 });
             }
@@ -739,22 +828,21 @@ window.onclick = function(event) {
                 let trSt = document.createElement('tr');
                 trSt.draggable = true;
                 trSt.ondragstart = () => onDragStart(cIdx, sIdx);
-                trSt.ondragover = onDragOver; trSt.ondragleave = onDragLeave; trSt.ondrop = (e) => onDrop(e, cIdx, sIdx);
-                let stHtml = `<td class="col-main" style="padding-left:12px; color:#34495e;">
-					<div style="display:flex; align-items:center;">
-						<span class="drag-handle">⠿</span>
-						<span onclick="showStudentStats(${cIdx}, ${sIdx})" 
-							oncontextmenu="event.preventDefault(); renameStudent(${cIdx},${sIdx})" 
-							style="cursor:pointer; flex-grow:1; user-select:none; text-decoration: underline dotted #ccc;"
-							title="Clic : statistiques | Clic droit : renommer">
-							${st.name}
-						</span>
-						<button class="btn-del" onclick="deleteStudent(${cIdx},${sIdx})">×</button>
-					</div>
-				</td>`;
+                let stHtml = `<td class="col-main" style="padding-left:12px;">
+                    <div style="display:flex; align-items:center;">
+                        <span class="drag-handle">⠿</span>
+                        <span onclick="showStudentStats(${cIdx}, ${sIdx})" 
+                            oncontextmenu="event.preventDefault(); renameStudent(${cIdx},${sIdx})" 
+                            style="cursor:pointer; flex-grow:1;">
+                            ${st.name}
+                        </span>
+                        <button class="btn-del" onclick="deleteStudent(${cIdx},${sIdx})">×</button>
+                    </div>
+                </td>`;
                 schoolMonths.forEach((m, mIdx) => {
                     if (activeMonth === mIdx) {
                         m.days.forEach(day => { 
+                            if (isDayExcluded(mIdx, day.num)) return; // SAUTER LE JOUR
                             const today = isToday(mIdx, day.num);
                             if (!isMobile || today) {
                                 let k = mIdx+'-'+day.num; let val = st.data[k]||''; 
@@ -770,15 +858,15 @@ window.onclick = function(event) {
         }
     });
 
-    // --- Ligne de Totaux (Bas de tableau) ---
+    // --- Ligne de Totaux ---
     let trFinal = document.createElement('tr');
     trFinal.style.background = "#f0f0f0";
     trFinal.style.fontWeight = "bold";
 
     if (activeMonth !== null) {
-        // Mode MENSUEL : TOTAUX JOUR
-        let htmlFinal = `<td style="text-align:right; padding-right:10px; font-size:11px;">TOTAUX JOUR :</td>`;
+        let htmlFinal = `<td style="text-align:right; padding-right:10px;">TOTAUX JOUR :</td>`;
         schoolMonths[activeMonth].days.forEach(day => {
+            if (isDayExcluded(activeMonth, day.num)) return; // SAUTER LE JOUR
             if (!isMobile || isToday(activeMonth, day.num)) {
                 let k = activeMonth + '-' + day.num;
                 let dayA = 0, dayE = 0;
@@ -787,39 +875,38 @@ window.onclick = function(event) {
                     if (st.data[k] === 'Exc') dayE++;
                 }));
                 let totalG = dayA + dayE;
-                let display = (totalG > 0) ? `${totalG}<span style="font-size:9px; font-weight:normal;">(${dayE})</span>` : "-";
-                htmlFinal += `<td style="text-align:center; font-size:11px; border-top:2px solid #ccc;">${display}</td>`;
+                let display = (totalG > 0) ? `${totalG}<span style="font-size:9px;">(${dayE})</span>` : "-";
+                htmlFinal += `<td style="text-align:center;">${display}</td>`;
             }
         });
         trFinal.innerHTML = htmlFinal;
         tbody.appendChild(trFinal);
     } else {
-        // Mode ANNUEL : TOTAUX MOIS
-        let htmlFinal = `<td style="text-align:right; padding-right:10px; font-size:11px;">TOTAUX MOIS :</td>`;
+        let htmlFinal = `<td style="text-align:right; padding-right:10px;">TOTAUX MOIS :</td>`;
         schoolMonths.forEach((m, mIdx) => {
             let monthA = 0, monthE = 0;
             schoolData.forEach(c => c.students.forEach(st => {
                 Object.keys(st.data).forEach(k => {
-                    if (k.startsWith(mIdx + '-')) {
+                    const [mK, dK] = k.split('-').map(Number);
+                    if (mK === mIdx && !isDayExcluded(mK, dK)) {
                         if (st.data[k] === 'A') monthA++;
                         if (st.data[k] === 'Exc') monthE++;
                     }
                 });
             }));
             let totalM = monthA + monthE;
-            let display = (totalM > 0) ? `${totalM}<span style="font-size:9px; font-weight:normal;">(${monthE})</span>` : "-";
-            htmlFinal += `<td style="text-align:center; font-size:11px; border-top:2px solid #ccc;">${display}</td>`;
+            let display = (totalM > 0) ? `${totalM}<span style="font-size:9px;">(${monthE})</span>` : "-";
+            htmlFinal += `<td style="text-align:center;">${display}</td>`;
         });
         trFinal.innerHTML = htmlFinal;
         tbody.appendChild(trFinal);
     }
 
     document.getElementById('globalStats').innerHTML = `Global : &nbsp; <b>${totalA + totalE}</b> Absences au total &nbsp; (dont <b>${totalE}</b> Excusés)`;
-	
-	// À ajouter à la fin de renderAll() pour synchroniser le bouton en permanence
-const isAnyOpen = schoolData.some(c => c.isOpen);
-const btn = document.getElementById('toggleBtn');
-if(btn) btn.innerHTML = isAnyOpen ? "▲ Tout<br>Replier" : "▼ Tout<br>Déplier";
+    
+    const isAnyOpen = schoolData.some(c => c.isOpen);
+    const btn = document.getElementById('toggleBtn');
+    if(btn) btn.innerHTML = isAnyOpen ? "▲ Tout<br>Replier" : "▼ Tout<br>Déplier";
 }
 	
 	function showStudentStats(cIdx, sIdx) {
@@ -1008,17 +1095,23 @@ if(btn) btn.innerHTML = isAnyOpen ? "▲ Tout<br>Replier" : "▼ Tout<br>Déplie
 
         // Collecte des données
         let totalA = 0, totalE = 0;
-        const classRows = [];
-        schoolData.forEach(classe => {
-            let cA = 0, cE = 0;
-            classe.students.forEach(st => {
-                Object.values(st.data).forEach(v => {
+    const classRows = [];
+
+    schoolData.forEach(classe => {
+        let cA = 0, cE = 0;
+        classe.students.forEach(st => {
+            Object.keys(st.data).forEach(k => {
+                const [mIdx, dNum] = k.split('-').map(Number);
+                // VÉRIFICATION CRUCIALE : On ignore le calcul si le jour est exclu
+                if (!isDayExcluded(mIdx, dNum)) {
+                    const v = st.data[k];
                     if(v === 'A') { totalA++; cA++; }
                     if(v === 'Exc') { totalE++; cE++; }
-                });
+                }
             });
-            classRows.push([classe.name, (cA + cE), cE, cA]);
         });
+        classRows.push([classe.name, (cA + cE), cE, cA]);
+    });
 
         // Tableau 1 : Synthèse
         doc.setFontSize(12);
@@ -1102,7 +1195,7 @@ if(btn) btn.innerHTML = isAnyOpen ? "▲ Tout<br>Replier" : "▼ Tout<br>Déplie
             headStyles: { fillColor: [44, 62, 80] }
         });
 
-        doc.save(`Bilan_Mensuel_${mConf.name}.pdf`);
+        doc.save(`Bilan_Directeur_${today.replace(/\//g, '-')}.pdf`);
     }
 
     // --- LOGIQUE DE RESET ---
@@ -1270,6 +1363,46 @@ if(btn) btn.innerHTML = isAnyOpen ? "▲ Tout<br>Replier" : "▼ Tout<br>Déplie
 
     // --- IMPORT / EXPORT ---
     
+	async function openImportModal() {
+    const content = `
+        <div style="text-align: center; padding: 10px; font-family: sans-serif;">
+            <div style="font-size: 40px; margin-bottom: 10px;">💾</div>
+            <h3 style="margin-top:0; color:var(--dark);">GESTION DES DONNÉES</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">Sauvegardez votre travail ou importez des listes.</p>
+            
+            <div style="display: grid; gap: 12px;">
+                <button onclick="exportJSON(); closeCustomModal();" 
+                        style="background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-file-download"></i> SAUVEGARDER (.json)
+                </button>
+
+                <div style="border-top: 1px solid #eee; margin: 10px 0;"></div>
+
+                <button onclick="document.getElementById('restoreInput').click(); closeCustomModal();" 
+                        style="background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-history"></i> RESTAURER BACKUP (.json)
+                </button>
+
+                <button onclick="document.getElementById('importCSV').click(); closeCustomModal();" 
+                        style="background: var(--dark); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-users"></i> IMPORTER ÉLÈVES (.csv ou .txt)
+                </button>
+            </div>
+            
+            <p style="font-size: 11px; color: #999; margin-top: 15px;">
+                Format CSV suggéré : <br><code>Nom de Classe;Nom de l'élève</code>
+            </p>
+        </div>
+    `;
+    showCustomModal("Données", content, "400px");
+}
+
+// Fonction utilitaire pour fermer la modale proprement
+function closeCustomModal() {
+    const m = document.getElementById('customModal');
+    if(m) m.remove();
+}
+
     function exportJSON() { 
         const a = document.createElement('a'); 
         a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify({schoolData, excludedDates})); 
@@ -1327,28 +1460,100 @@ if(btn) btn.innerHTML = isAnyOpen ? "▲ Tout<br>Replier" : "▼ Tout<br>Déplie
     }
 
     async function openVacationModal() {
-        let list = excludedDates.map((v, i) => `<li>${v.name} <button class="btn-del" onclick="removeVacation(${i})">x</button></li>`).join('');
-        await showModal({ 
-            title: '🏖️ Vacances', 
-            content: `<input type="text" id="vacName" placeholder="Nom" class="modal-input">
-                      <input type="date" id="vacStart" class="modal-input">
-                      <input type="date" id="vacEnd" class="modal-input">
-                      <button onclick="addVacation()" class="btn-main" style="background:var(--success); width:100%; margin-top:5px;">Ajouter</button>
-                      <ul style="margin-top:10px; max-height:150px; overflow-y:auto;">${list}</ul>`, 
-            buttons: [{ text: 'Fermer' }] 
-        });
-        refreshSchoolMonths();
-        renderAll();
-    }
+    // Génération d'une liste stylisée pour les vacances existantes
+    const list = excludedDates.length > 0 
+        ? excludedDates.map((v, i) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:8px 12px; border-radius:6px; margin-bottom:5px; border:1px solid #eee;">
+                <div style="text-align:left;">
+                    <div style="font-weight:bold; color:var(--dark); font-size:12px;">${v.name}</div>
+                    <div style="font-size:10px; color:#666;">Du ${new Date(v.start).toLocaleDateString()} au ${new Date(v.end).toLocaleDateString()}</div>
+                </div>
+                <button onclick="removeVacation(${i})" style="background:none; border:none; color:var(--absent); cursor:pointer; font-size:16px; padding:5px;">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        `).join('')
+        : `<p style="color:#999; font-style:italic; font-size:12px; padding:10px;">Aucune période configurée.</p>`;
+
+    const content = `
+        <div style="text-align: center; font-family: sans-serif;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🏖️</div>
+            <h3 style="margin-top:0; color:var(--dark);">VACANCES & FÉRIÉS</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Les jours configurés apparaîtront en gris et seront exclus des calculs d'absences.</p>
+            
+            <div style="background:#f1f4f7; padding:15px; border-radius:10px; margin-bottom:20px;">
+                <input type="text" id="vacName" placeholder="Nom (ex: Vacances d'Hiver)" class="modal-input" style="margin-bottom:8px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <div>
+                        <label style="font-size:10px; display:block; text-align:left; color:#666;">Début :</label>
+                        <input type="date" id="vacStart" class="modal-input" style="margin-top:2px;">
+                    </div>
+                    <div>
+                        <label style="font-size:10px; display:block; text-align:left; color:#666;">Fin :</label>
+                        <input type="date" id="vacEnd" class="modal-input" style="margin-top:2px;">
+                    </div>
+                </div>
+                <button onclick="addVacation()" class="btn-main" style="background:var(--success); width:100%; height:35px;">
+                    <i class="fas fa-plus"></i> Ajouter au calendrier
+                </button>
+            </div>
+
+            <div style="text-align:left;">
+                <h4 style="font-size:11px; color:var(--dark); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Périodes enregistrées :</h4>
+                <div style="max-height: 180px; overflow-y: auto; padding-right:5px;">
+                    ${list}
+                </div>
+            </div>
+        </div>
+    `;
+
+    await showModal({ 
+        title: 'Configuration Calendrier', 
+        content: content, 
+        buttons: [{ text: 'Fermer', color: 'var(--dark)' }] 
+    });
+
+    // Ces fonctions assurent la mise à jour visuelle immédiate après la fermeture
+    refreshSchoolMonths();
+    renderAll();
+}
 
     window.addVacation = () => { 
-        const n=document.getElementById('vacName').value, s=document.getElementById('vacStart').value, e=document.getElementById('vacEnd').value; 
-        if(n&&s&&e){ excludedDates.push({name:n,start:s,end:e}); save(); openVacationModal(); } 
-    };
-    window.removeVacation = (i) => { excludedDates.splice(i,1); save(); openVacationModal(); };
+    const n = document.getElementById('vacName').value, 
+          s = document.getElementById('vacStart').value, 
+          e = document.getElementById('vacEnd').value; 
+    
+    if (n && s && e) { 
+        // On stocke les dates telles quelles
+        excludedDates.push({name: n, start: s, end: e}); 
+        
+        save(); 
+        refreshSchoolMonths();
+        renderAll(); 
+        
+        // Recharge la modale pour actualiser la liste visuelle
+        openVacationModal(); 
+    } else {
+        alert("Veuillez remplir tous les champs.");
+    }
+};
 
-    // Lancement
-    loadFromCloud();
+window.removeVacation = (i) => { 
+    excludedDates.splice(i, 1); 
+    
+    // On sauvegarde
+    save(); 
+    
+    // Mise à jour immédiate du calendrier et du tableau
+    if (typeof refreshSchoolMonths === "function") refreshSchoolMonths();
+    renderAll(); 
+    
+    // On recharge la modale pour actualiser la liste
+    openVacationModal(); 
+};
+
+// Lancement initial
+loadFromCloud();
 </script>
 </body>
 </html>
