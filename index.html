@@ -22,14 +22,24 @@
         .day-col:hover { background: var(--blue); color: white; }
 
         .today-highlight { background: #eef7ff !important; box-shadow: inset 0 0 0 1px var(--blue) !important; }
-        .col-main { width: 240px; min-width: 240px; text-align: left; padding-left: 12px; background: #fff; position: sticky; left: 0; z-index: 10; border-right: 2px solid #ddd; }
+        .col-main { width: 300px; min-width: 300px; text-align: left; padding-left: 12px; background: #fff; position: sticky; left: 0; z-index: 10; border-right: 2px solid #ddd; }
         
         .class-row { background: #f1f4f7; font-weight: bold; }
-        .class-name-container { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+		.class-row td { 
+            height: 45px; /* Augmente la hauteur de la cellule */
+        }
+        .class-name-container { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            width: 100%; 
+            padding: 5px 0; /* Ajoute un peu d'espace interne */
+            font-size: 13px; /* Augmente la taille globale du texte de la ligne */
+        }
         
         /* Poignées de drag */
-        .drag-handle { cursor: grab; color: #bdc3c7; padding-right: 8px; font-size: 16px; }
-        .drag-handle-class { cursor: grab; color: var(--blue); padding-right: 10px; font-size: 18px; user-select: none; }
+        .drag-handle { cursor: grab; color: #bdc3c7; padding-right: 8px; font-size: 13px; }
+        .drag-handle-class { cursor: grab; color: var(--blue); padding-right: 10px; font-size: 13px; user-select: none; }
         
         .cell-abs { cursor: pointer; font-weight: bold; transition: 0.1s; }
         .st-none { background: #fff; color: transparent; }
@@ -37,11 +47,87 @@
         .st-Exc { background: var(--excuse) !important; color: black !important; }
         
         .stats-badge { font-size: 9px; background: white; padding: 2px 8px; border-radius: 12px; border: 1px solid #dcdde1; color: #2f3640; margin-left: auto; margin-right: 8px; font-weight: 500; }
-        .btn-main { border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; color: white; font-weight: 600; font-size: 10px; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-main { 
+            border: none; 
+            padding: 5px 10px; /* Padding réduit pour compenser la hauteur */
+            border-radius: 6px; 
+            cursor: pointer; 
+            color: white; 
+            font-weight: 600; 
+            font-size: 10px; 
+            transition: 0.2s; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; /* Centre le texte */
+            text-align: center;      /* Centre le texte sur plusieurs lignes */
+            gap: 5px; 
+            line-height: 1.2;        /* Espace serré entre les deux lignes */
+            width: 80px;             /* Largeur fixe pour forcer le retour à la ligne */
+            height: 40px;            /* Hauteur fixe pour l'alignement */
+            white-space: normal;     /* Autorise le retour à la ligne */
+        }
         .btn-main:hover { filter: brightness(1.1); transform: translateY(-1px); }
         .btn-del { background: none; border: none; color: #bdc3c7; cursor: pointer; font-size: 14px; padding: 4px; transition: 0.2s; }
         .btn-del:hover { color: var(--absent); }
 
+		/* Conteneur pour l'input et le bouton + intégré */
+        .input-group { position: relative; display: inline-flex; align-items: center; }
+        
+        .input-group input { 
+            padding: 8px 30px 8px 10px; 
+            border-radius: 6px; 
+            border: 1px solid #ddd; 
+            outline: none; 
+            font-family: inherit;
+            width: 180px;
+        }
+
+        .btn-add-inline { 
+            position: absolute; 
+            right: 5px; 
+            background: none; 
+            border: none; 
+            color: var(--dark); 
+            font-weight: bold; 
+            font-size: 18px; 
+            cursor: pointer; 
+            padding: 0 5px;
+            line-height: 1;
+        }
+        .btn-add-inline:hover { color: var(--blue); }
+		
+		/* Style du Menu Déroulant */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { 
+            display: none; 
+            position: absolute; 
+            right: 0; 
+            background-color: white; 
+            min-width: 180px; 
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.15); 
+            z-index: 1000; 
+            border-radius: 8px; 
+            padding: 5px 0;
+            margin-top: 5px;
+            border: 1px solid #eee;
+        }
+        .dropdown-content button {
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--dark);
+            font-family: inherit;
+        }
+        .dropdown-content button:hover { background-color: #f8f9fa; color: var(--blue); }
+        .show { display: block; }
+		
         .drag-over { border-top: 3px solid var(--blue) !important; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.7); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
@@ -71,21 +157,28 @@
 
 <div class="container">
     <div class="top-bar">
-        <input type="text" id="newClassName" placeholder="Nom de la classe..." style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; outline: none;">
-        <button class="btn-main" onclick="addClass()" style="background: var(--dark);">+ Classe</button>
-        <button class="btn-main" onclick="document.getElementById('importCSV').click()" style="background:var(--blue);">📊 Import CSV/TXT</button>
+        <div class="input-group">
+            <input type="text" id="newClassName" placeholder="Nom de la classe..." onkeypress="if(event.key==='Enter') addClass()">
+            <button class="btn-add-inline" onclick="addClass()" title="Ajouter la classe">+</button>
+        </div>
+        <button class="btn-main" onclick="document.getElementById('importCSV').click()" style="background:var(--blue);">📊 Import<br>CSV/TXT</button>
         <input type="file" id="importCSV" style="display:none" accept=".csv, .txt" onchange="importCSV(event)">
-        <button class="btn-main" onclick="toggleAllClasses(true)" style="background: var(--success);">📂 Déplier</button>
-        <button class="btn-main" onclick="toggleAllClasses(false)" style="background: var(--gray);">📁 Replier</button>
-        <button class="btn-main" onclick="openVacationModal()" style="background:#f39c12;">🏖️ Vacances</button>
+        <button id="toggleBtn" class="btn-main" onclick="toggleAllClasses()" style="background: var(--gray);">📂 Déplier<br>Tout</button>
+        <button class="btn-main" onclick="openVacationModal()" style="background:#f39c12;">🏖️ Vacances<br>et fériés</button>
         <span id="syncIndicator" class="sync-status">Initialisation...</span>
         <div style="flex-grow: 1; display: flex; justify-content: flex-end; gap: 8px;">
-            <button class="btn-main" onclick="exportJSON()" style="background:var(--gray);">💾 Backup</button>
-            <button class="btn-main" onclick="document.getElementById('restoreInput').click()" style="background:#8e44ad;">🔄 Restore</button>
-            <button class="btn-main" onclick="exportPDF()" style="background:#e74c3c;">📄 PDF</button>
+            <div class="dropdown">
+                <button class="btn-main" onclick="toggleDropdown()" style="background: var(--dark);">⚙️ Gestion ▾</button>
+                <div id="toolsDropdown" class="dropdown-content">
+                    <button onclick="exportPDF()">📄 PDF (Mois actif)</button>
+                    <button onclick="exportJSON()">💾 Backup (JSON)</button>
+                    <button onclick="document.getElementById('restoreInput').click()">🔄 Restore</button>
+                    <div style="border-top: 1px solid #eee; margin: 5px 0;"></div>
+                    <button onclick="confirmClearAll()" style="color: var(--absent);">🗑️ Reset</button>
+                </div>
+            </div>
+            <button class="btn-main" onclick="openHelpModal()" style="background: #19C3E3; border-radius: 50%; width: 35px; height: 35px; padding: 0; justify-content: center;">?</button>
             <input type="file" id="restoreInput" style="display:none" accept=".json" onchange="importJSON(event)">
-            <button class="btn-main" onclick="openHelpModal()" style="background: #95a5a6; border-radius: 50%; width: 25px; height: 25px; padding: 0; justify-content: center;">?</button>
-            <button class="btn-main" onclick="confirmClearAll()" style="background:var(--absent);">🗑️ Reset</button>
         </div>
     </div>
 
@@ -150,33 +243,40 @@
 
     async function openHelpModal() {
     await showModal({
-        title: '📖 Guide Complet d\'Utilisation',
+        title: '📖 Guide d\'utilisation - École Collaboratif',
         content: `
-            <div style="text-align: left; font-size: 12px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+            <div style="text-align: left; font-size: 12px; max-height: 450px; overflow-y: auto; padding-right: 10px;">
                 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">📍 Gestion des Absences</h3>
-                <p>Cliquez sur une cellule blanche pour changer son état. Le cycle est le suivant :<br>
-                • ⬜ <b>Vide</b> : L'élève est présent.<br>
-                • 🔴 <span style="color:var(--absent)"><b>A (Absent)</b></span> : Absence non justifiée.<br>
-                • 🟡 <span style="color:#d4ac0d"><b>Exc (Excusé)</b></span> : Absence justifiée (certificat, famille, etc.).</p>
+                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top:0;">🖱️ Navigation & Édition</h3>
+                <p>• <b>Déplier/Replier :</b> Cliquez une fois sur le <b>nom d'une classe</b> ou sur la petite flèche (▶/▾).</p>
+                <p>• <b>Renommer :</b> Faites un <b>clic droit</b> sur le nom d'une classe ou d'un élève.</p>
+                <p>• <b>Ajouter une classe :</b> Tapez le nom en haut à gauche et cliquez sur le <b>+</b> (ou touche Entrée).</p>
+                <p>• <b>Ajouter un élève :</b> Cliquez sur le <b>+ bleu</b> situé à droite du nom de la classe.</p>
 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">↕️ Organisation & Tri</h3>
-                <p><b>Pour les Classes :</b> Utilisez la poignée bleue <span style="color:var(--blue); font-weight:bold">⠿</span> pour déplacer une classe entière vers le haut ou le bas.</p>
-                <p><b>Pour les Élèves :</b> Utilisez la poignée grise <span style="color:#bdc3c7; font-weight:bold">⠿</span> pour changer l'ordre des élèves ou transférer un élève dans une autre classe (Drag & Drop).</p>
-                <p><b>Édition :</b> Cliquez directement sur le <b>nom d'un élève</b> ou d'une <b>classe</b> pour le modifier.</p>
+                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">🔴 Gestion des Absences</h3>
+                <p>Cliquez sur une cellule pour changer l'état de l'élève :<br>
+                • ⬜ <b>Vide</b> : Présent.<br>
+                • <span style="color:var(--absent)"><b>A</b></span> : Absent (non justifié).<br>
+                • <span style="color:#d4ac0d"><b>Exc</b></span> : Excusé (justifié).</p>
 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">📅 Navigation Calendrier</h3>
-                <p>• <b>Vue Mensuelle :</b> Cliquez sur le nom d'un mois en haut pour l'isoler. Cliquez à nouveau (ou sur la flèche ⬅) pour revenir à la vue globale annuelle.</p>
-                <p>• <b>Résumé Quotidien :</b> Cliquez sur un <b>numéro de jour</b> dans l'en-tête pour afficher la liste de tous les absents de l'école pour cette date précise.</p>
-                <p>• <b>Vacances :</b> Le bouton 🏖️ permet de définir des périodes. Les jours de vacances seront automatiquement masqués du tableau.</p>
+                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">↕️ Organisation (Drag & Drop)</h3>
+                <p>• <b>Classes :</b> Utilisez la poignée bleue <span style="color:var(--blue)">⠿</span> pour changer l'ordre des classes.</p>
+                <p>• <b>Élèves :</b> Utilisez la poignée grise <span style="color:#bdc3c7">⠿</span> pour déplacer un élève ou le transférer dans une autre classe.</p>
 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">📤 Exports & Sécurité</h3>
-                <p>• 📄 <b>PDF :</b> Génère un rapport détaillé (Nom, décompte A/Exc, et liste des dates). <i>Note : Vous devez d'abord sélectionner un mois.</i></p>
-                <p>• 💾 <b>Backup :</b> Télécharge un fichier <code>.json</code>. Utilisez-le régulièrement pour garder une copie de secours sur votre ordinateur.</p>
-                <p>• ☁️ <b>Cloud :</b> La synchronisation est automatique dès qu'une modification est faite (voyant vert ✅).</p>
+                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">📅 Calendrier & Vue</h3>
+                <p>• <b>Vue Mensuelle :</b> Cliquez sur un mois en haut. Cliquez sur ⬅ pour revenir à l'année.</p>
+                <p>• <b>Résumé du jour :</b> Cliquez sur le <b>numéro du jour</b> (ex: "14") pour voir la liste de tous les absents de l'école à cette date.</p>
+                <p>• <b>Vacances :</b> Le bouton 🏖️ permet de masquer des périodes entières du tableau.</p>
 
-                <div style="background:#fff3cd; padding:10px; border-radius:8px; border-left:4px solid #ffc107; margin-top:10px;">
-                    ⚠️ <b>Attention :</b> Le bouton <b>Reset</b> efface l'intégralité des données du serveur. Utilisez-le uniquement pour préparer une nouvelle année scolaire.
+                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">⚙️ Menu Gestion</h3>
+                <p>Le bouton <b>"Gestion ▾"</b> regroupe les outils avancés :<br>
+                • 📄 <b>PDF :</b> Génère un bilan détaillé du mois sélectionné.<br>
+                • 💾 <b>Backup :</b> Sauvegarde un fichier <code>.json</code> contenant vos données et vos vacances.<br>
+                • 🔄 <b>Restore :</b> Recharge un ancien fichier de sauvegarde.<br>
+                • 🗑️ <b>Reset :</b> Efface toutes les données du serveur pour une nouvelle année.</p>
+
+                <div style="background:#e8f4fd; padding:10px; border-radius:8px; border-left:4px solid var(--blue); margin-top:10px;">
+                    ✅ <b>Note :</b> La synchronisation est automatique. Le voyant vert en haut confirme que vos modifications sont enregistrées sur le Cloud.
                 </div>
             </div>
         `,
@@ -184,6 +284,22 @@
     });
 }
 
+	function toggleDropdown() {
+        document.getElementById("toolsDropdown").classList.toggle("show");
+    }
+
+    // Ferme le menu si on clique en dehors
+    window.onclick = function(event) {
+        if (!event.target.matches('.btn-main')) {
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            for (var i = 0; i < dropdowns.length; i++) {
+                if (dropdowns[i].classList.contains('show')) {
+                    dropdowns[i].classList.remove('show');
+                }
+            }
+        }
+    }
+	
     // --- Cloud & Logique ---
     async function loadFromCloud() {
         try {
@@ -191,6 +307,10 @@
             if (data) { 
                 schoolData = data.content.schoolData || []; 
                 excludedDates = data.content.excludedDates || [];
+                
+                // Force la fermeture de toutes les classes au chargement
+                schoolData.forEach(classe => classe.isOpen = false);
+
                 document.getElementById('syncIndicator').innerText = "✅ Connecté"; 
                 const now = new Date();
                 const foundIdx = monthConfigs.findIndex(m => m.m === now.getMonth() && m.y === now.getFullYear());
@@ -254,87 +374,116 @@
         }
         save(); renderAll();
     }
-
+	
+	async function addStudent(cIdx) {
+        const name = await showModal({ 
+            title: 'Nouvel élève', 
+            content: `Ajouter un élève dans la classe <b>${schoolData[cIdx].name}</b> :`, 
+            showInput: true, 
+            buttons: [
+                { text: 'Annuler', action: 'cancel' },
+                { text: 'Ajouter', color: 'var(--success)' }
+            ] 
+        });
+        
+        if (name && name.trim() !== "") {
+            schoolData[cIdx].students.push({ name: name.trim(), data: {} });
+            schoolData[cIdx].isOpen = true; // Ouvre la classe pour voir l'élève ajouté
+            save();
+            renderAll();
+        }
+    }
+	
     // --- Rendu ---
     function renderAll() {
-        // Header
-        const mRow = document.getElementById('monthRow'); const dRow = document.getElementById('dayRow');
-        while(mRow.cells.length > 1) mRow.deleteCell(1); while(dRow.cells.length > 1) dRow.deleteCell(1);
-        schoolMonths.forEach((m, idx) => {
-            if (activeMonth !== null && activeMonth !== idx) return;
-            let th = document.createElement('th'); th.className = 'month-header' + (activeMonth === idx ? ' active' : '');
-            th.innerText = (activeMonth === idx) ? `⬅ ${m.name}` : m.name;
-            th.onclick = () => { activeMonth = (activeMonth === idx) ? null : idx; renderAll(); };
-            if (activeMonth === idx) {
-                th.colSpan = m.days.length;
-                m.days.forEach(day => { 
-                    let dTh = document.createElement('th'); 
-                    dTh.className = 'day-col' + (isToday(idx, day.num) ? ' today-highlight' : ''); 
-                    dTh.innerHTML = `${day.label}<br>${day.num}`; 
-                    dTh.onclick = (e) => { e.stopPropagation(); showDailySummary(idx, day.num, m.name); };
-                    dRow.appendChild(dTh); 
-                });
-            } else { th.colSpan = 1; dRow.appendChild(document.createElement('th')); }
-            mRow.appendChild(th);
-        });
+    // Header
+    const mRow = document.getElementById('monthRow'); const dRow = document.getElementById('dayRow');
+    while(mRow.cells.length > 1) mRow.deleteCell(1); while(dRow.cells.length > 1) dRow.deleteCell(1);
+    schoolMonths.forEach((m, idx) => {
+        if (activeMonth !== null && activeMonth !== idx) return;
+        let th = document.createElement('th'); th.className = 'month-header' + (activeMonth === idx ? ' active' : '');
+        th.innerText = (activeMonth === idx) ? `⬅ ${m.name}` : m.name;
+        th.onclick = () => { activeMonth = (activeMonth === idx) ? null : idx; renderAll(); };
+        if (activeMonth === idx) {
+            th.colSpan = m.days.length;
+            m.days.forEach(day => { 
+                let dTh = document.createElement('th'); 
+                dTh.className = 'day-col' + (isToday(idx, day.num) ? ' today-highlight' : ''); 
+                dTh.innerHTML = `${day.label}<br>${day.num}`; 
+                dTh.onclick = (e) => { e.stopPropagation(); showDailySummary(idx, day.num, m.name); };
+                dRow.appendChild(dTh); 
+            });
+        } else { th.colSpan = 1; dRow.appendChild(document.createElement('th')); }
+        mRow.appendChild(th);
+    });
 
-        // Body
-        const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
-        let totalA = 0, totalE = 0;
-        schoolData.forEach((classe, cIdx) => {
-            let tr = document.createElement('tr'); tr.className = 'class-row';
-            tr.draggable = true;
-            tr.ondragstart = () => onClassDragStart(cIdx);
-            tr.ondragover = onDragOver; tr.ondragleave = onDragLeave; tr.ondrop = (e) => onDrop(e, cIdx, null);
+    // Body
+    const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
+    let totalA = 0, totalE = 0;
+    schoolData.forEach((classe, cIdx) => {
+        let tr = document.createElement('tr'); tr.className = 'class-row';
+        tr.draggable = true;
+        tr.ondragstart = () => onClassDragStart(cIdx);
+        tr.ondragover = onDragOver; tr.ondragleave = onDragLeave; tr.ondrop = (e) => onDrop(e, cIdx, null);
 
-            let cA = 0, cE = 0;
-            classe.students.forEach(st => Object.keys(st.data).forEach(k => { 
-                if (activeMonth===null || k.startsWith(activeMonth+'-')) { 
-                    if(st.data[k]==='A') { cA++; totalA++; } 
-                    if(st.data[k]==='Exc') { cE++; totalE++; } 
-                }
-            }));
-
-            tr.innerHTML = `<td class="col-main">
-                <div class="class-name-container">
-                    <span class="drag-handle-class">⠿</span>
-                    <span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;renderAll();" style="cursor:pointer; font-size:14px;">${classe.isOpen?'▾':'▶'}</span>
-                    <span onclick="renameClass(${cIdx})" style="cursor:pointer; margin-left:8px; flex-grow:1; font-weight:700;">${classe.name}</span>
-                    <span class="stats-badge">Abs: ${cA} | Exc: ${cE}</span>
-                    <button class="btn-del" onclick="deleteClass(${cIdx})">🗑️</button>
-                </div>
-            </td>`;
-            schoolMonths.forEach((m, mIdx) => { if (activeMonth===null || activeMonth===mIdx) tr.innerHTML += `<td colspan="${activeMonth===mIdx?m.days.length:1}"></td>`; });
-            tbody.appendChild(tr);
-
-            if(classe.isOpen) {
-                classe.students.forEach((st, sIdx) => {
-                    let trSt = document.createElement('tr');
-                    trSt.draggable = true;
-                    trSt.ondragstart = () => onDragStart(cIdx, sIdx);
-                    trSt.ondragover = onDragOver; trSt.ondragleave = onDragLeave; trSt.ondrop = (e) => onDrop(e, cIdx, sIdx);
-
-                    let stHtml = `<td class="col-main" style="padding-left:12px; color:#34495e;">
-                        <div style="display:flex; align-items:center;">
-                            <span class="drag-handle">⠿</span>
-                            <span onclick="renameStudent(${cIdx},${sIdx})" style="cursor:pointer; flex-grow:1">${st.name}</span>
-                            <button class="btn-del" onclick="deleteStudent(${cIdx},${sIdx})">×</button>
-                        </div>
-                    </td>`;
-                    schoolMonths.forEach((m, mIdx) => {
-                        if (activeMonth === mIdx) m.days.forEach(day => { 
-                            let k = mIdx+'-'+day.num; let val = st.data[k]||''; 
-                            let highlight = isToday(mIdx, day.num) ? ' today-highlight' : '';
-                            stHtml += `<td class="cell-abs st-${val||'none'}${highlight}" onclick="updateStatus(${cIdx},${sIdx},'${k}')">${val}</td>`; 
-                        });
-                        else if (activeMonth === null) stHtml += `<td></td>`;
-                    });
-                    trSt.innerHTML = stHtml; tbody.appendChild(trSt);
-                });
+        let cA = 0, cE = 0;
+        classe.students.forEach(st => Object.keys(st.data).forEach(k => { 
+            if (activeMonth===null || k.startsWith(activeMonth+'-')) { 
+                if(st.data[k]==='A') { cA++; totalA++; } 
+                if(st.data[k]==='Exc') { cE++; totalE++; } 
             }
-        });
-        document.getElementById('globalStats').innerHTML = `Global : &nbsp; <b>${totalA}</b> Absences &nbsp; | &nbsp; <b>${totalE}</b> Excusés`;
-    }
+        }));
+
+        tr.innerHTML = `<td class="col-main">
+            <div class="class-name-container">
+                <span class="drag-handle-class">⠿</span>
+                <span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;renderAll();" style="cursor:pointer; font-size:14px;">${classe.isOpen?'▾':'▶'}</span>
+                <span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;renderAll();" 
+                    oncontextmenu="event.preventDefault(); renameClass(${cIdx})" 
+                    style="cursor:pointer; margin-left:8px; flex-grow:1; font-weight:700; font-size:14px; user-select:none;"
+                    title="Clic : déplier | Clic droit : renommer">
+                    ${classe.name}
+                </span>
+                <span class="stats-badge">Abs: ${cA} | Exc: ${cE}</span>
+                <button class="btn-del" onclick="addStudent(${cIdx})" style="color:var(--blue); font-size:18px; font-weight:bold; margin-right:10px;">+</button>
+                <button class="btn-del" onclick="deleteClass(${cIdx})">🗑️</button>
+            </div>
+        </td>`;
+        schoolMonths.forEach((m, mIdx) => { if (activeMonth===null || activeMonth===mIdx) tr.innerHTML += `<td colspan="${activeMonth===mIdx?m.days.length:1}"></td>`; });
+        tbody.appendChild(tr);
+
+        if(classe.isOpen) {
+            classe.students.forEach((st, sIdx) => {
+                let trSt = document.createElement('tr');
+                trSt.draggable = true;
+                trSt.ondragstart = () => onDragStart(cIdx, sIdx);
+                trSt.ondragover = onDragOver; trSt.ondragleave = onDragLeave; trSt.ondrop = (e) => onDrop(e, cIdx, sIdx);
+
+                let stHtml = `<td class="col-main" style="padding-left:12px; color:#34495e;">
+                    <div style="display:flex; align-items:center;">
+                        <span class="drag-handle">⠿</span>
+                        <span oncontextmenu="event.preventDefault(); renameStudent(${cIdx},${sIdx})" 
+                            style="cursor:pointer; flex-grow:1; user-select:none;"
+                            title="Clic droit pour renommer">
+                            ${st.name}
+                        </span>
+                        <button class="btn-del" onclick="deleteStudent(${cIdx},${sIdx})">×</button>
+                    </div>
+                </td>`;
+                schoolMonths.forEach((m, mIdx) => {
+                    if (activeMonth === mIdx) m.days.forEach(day => { 
+                        let k = mIdx+'-'+day.num; let val = st.data[k]||''; 
+                        let highlight = isToday(mIdx, day.num) ? ' today-highlight' : '';
+                        stHtml += `<td class="cell-abs st-${val||'none'}${highlight}" onclick="updateStatus(${cIdx},${sIdx},'${k}')">${val}</td>`; 
+                    });
+                    else if (activeMonth === null) stHtml += `<td></td>`;
+                });
+                trSt.innerHTML = stHtml; tbody.appendChild(trSt);
+            });
+        }
+    });
+    document.getElementById('globalStats').innerHTML = `Global : &nbsp; <b>${totalA}</b> Absences &nbsp; | &nbsp; <b>${totalE}</b> Excusés`;
+}
 
     // --- Fonctions PDF, Import, Reset, etc. (Conservées) ---
     async function deleteClass(cIdx) {
@@ -360,7 +509,22 @@
         save(); renderAll();
     }
     function isToday(mIdx, dNum) { const now = new Date(); const conf = monthConfigs[mIdx]; return now.getDate() === dNum && now.getMonth() === conf.m && now.getFullYear() === conf.y; }
-    function toggleAllClasses(open) { schoolData.forEach(c => c.isOpen = open); renderAll(); }
+    function toggleAllClasses() {
+        const isAnyOpen = schoolData.some(c => c.isOpen);
+        const newState = !isAnyOpen;
+        schoolData.forEach(c => c.isOpen = newState);
+        
+        const btn = document.getElementById('toggleBtn');
+        if (newState) {
+            btn.innerHTML = "📁 Tout<br>Replier";
+            btn.style.background = "var(--gray)";
+        } else {
+            btn.innerHTML = "📂 Tout<br>Déplier";
+            btn.style.background = "var(--success)";
+        }
+        renderAll();
+    }
+	
     function exportJSON() { const a = document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify({schoolData, excludedDates})); a.download="backup.json"; a.click(); }
     async function importJSON(e) { /* Logic import JSON... */ location.reload(); }
     async function confirmClearAll() { const c = await showModal({ title: 'RESET', content: 'Effacer TOUT ?', buttons: [{ text: 'Non', action: 'cancel' }, { text: 'OUI', color: 'var(--absent)' }] }); if(c){ schoolData=[]; excludedDates=[]; await save(); location.reload(); } }
