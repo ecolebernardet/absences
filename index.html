@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Suivi Absences - École Collaboratif</title>
 <style>
     :root { 
@@ -151,25 +152,45 @@
     .sync-status { font-size: 10px; color: #95a5a6; font-style: italic; }
 
     /* Menu Déroulant Gestion */
-    .dropdown { position: relative; display: inline-block; }
-    .dropdown-content { 
-        display: none; 
-        position: absolute; 
-        right: 0; 
-        background-color: white; 
-        min-width: 180px; 
-        box-shadow: 0px 8px 16px rgba(0,0,0,0.15); 
-        z-index: 1000; 
-        border-radius: 8px; 
-        padding: 5px 0; 
-        margin-top: 5px; 
-        border: 1px solid #eee; 
-    }
-    .dropdown-content button { 
-        width: 100%; text-align: left; background: none; border: none; padding: 10px 15px; 
-        font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: var(--dark); 
-    }
-    .dropdown-content button:hover { background-color: #f8f9fa; color: var(--blue); }
+    /* Remplace cette partie dans ton <style> */
+/* On garde le positionnement sous le bouton */
+.dropdown { 
+    position: relative; 
+    display: inline-flex; 
+}
+
+.dropdown-content { 
+    display: none; /* Caché par défaut */
+    position: absolute; 
+    top: 100%; 
+    left: 0; 
+    background-color: white; 
+    min-width: 210px; 
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.15); 
+    z-index: 10000; 
+    border-radius: 8px; 
+    border: 1px solid #ddd;
+    margin-top: 5px;
+}
+
+/* LA CLASSE QUI COMMANDE L'OUVERTURE */
+.dropdown-content.show { 
+    display: block !important; 
+}
+
+.dropdown-content a { 
+    width: 100%; 
+    text-align: left; 
+    text-decoration: none; 
+    padding: 12px 15px; 
+    font-size: 11px; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    color: var(--dark); 
+    border-bottom: 1px solid #f9f9f9;
+}
+
     .show { display: block; }
 
     /* Modale */
@@ -226,21 +247,31 @@
             <button class="btn-add-inline" onclick="addClass()">+</button>
         </div>
 
-        <button id="toggleBtn" class="btn-main" onclick="toggleAllClasses()" style="background: var(--gray);">📂 Tout<br>Déplier</button>
-        <button class="btn-main" onclick="openVacationModal()" style="background:#f39c12;">🏖️ Vacances<br>& Fériés</button>
+        <button id="toggleBtn" class="btn-main" onclick="toggleAllClasses()" style="background: var(--gray);">▼ Tout<br>Déplier</button>
         
         <div class="dropdown">
-            <button class="btn-main" onclick="toggleDropdown()" style="background: var(--dark);">⚙️ Gestion ▾</button>
-            <div id="toolsDropdown" class="dropdown-content">
-                <button onclick="document.getElementById('importCSV').click()">📊 Import CSV/TXT</button>
-                <button onclick="exportPDF()">📄 PDF (Mois)</button>
-                <button onclick="exportJSON()">💾 Backup (JSON)</button>
-                <button onclick="document.getElementById('restoreInput').click()">🔄 Restore</button>
-                <div style="border-top: 1px solid #eee; margin: 5px 0;"></div>
-                <button onclick="confirmClearAll()" style="color: var(--absent);">🗑️ Reset Global</button>
-            </div>
-        </div>
-
+    <button class="btn-main" style="background:var(--gray)" onclick="toggleGestionMenu(event)">
+        Gestion ▾
+    </button>
+    
+    <div id="gestionMenu" class="dropdown-content">
+        <a href="javascript:void(0)" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Bilan Mensuel PDF</a>
+        <a href="javascript:void(0)" onclick="saveDashboardAsPDF()"><i class="fas fa-chart-line"></i> Bilan Directeur PDF</a>
+        <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
+        <a href="javascript:void(0)" onclick="openVacationModal()"><i class="fas fa-umbrella-beach"></i> Configurer Vacances</a>
+        <a href="javascript:void(0)" onclick="openImportModal()"><i class="fas fa-file-import"></i> Importer / Sauvegarder</a>
+        <hr style="border:0; border-top:1px solid #eee; margin:5px 0;">
+        <a href="javascript:void(0)" onclick="resetAnnualAbsences()" style="color:var(--absent)">
+            <i class="fas fa-broom"></i> Effacer toutes les absences
+        </a>
+        <a href="javascript:void(0)" onclick="confirmClearAll()" style="color:var(--absent); font-weight:bold;">
+            <i class="fas fa-trash-alt"></i> RESET TOTAL
+        </a>
+    </div>
+</div>
+		<button onclick="openDashboard()" style="background:var(--dark); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;">
+			📊 Tableau de Bord
+		</button>
         <button class="btn-main" onclick="openHelpModal()" style="background: #19C3E3; border-radius: 50%; width: 35px; height: 35px; min-width:35px; padding: 0;">?</button>
         
         <input type="file" id="importCSV" style="display:none" accept=".csv, .txt" onchange="importCSV(event)">
@@ -318,42 +349,40 @@
     await showModal({
         title: '📖 Guide d\'utilisation - École Collaboratif',
         content: `
-            <div style="text-align: left; font-size: 12px; max-height: 450px; overflow-y: auto; padding-right: 10px;">
+            <div style="text-align: left; font-size: 13px; max-height: 500px; overflow-y: auto; padding-right: 10px; line-height: 1.5;">
                 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top:0;">🖱️ Navigation & Édition</h3>
+                <h3 style="color:var(--blue); border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top:0;">🖱️ Navigation & Édition</h3>
                 <p>• <b>Stats Élève :</b> Cliquez sur le <b>nom d'un élève</b> pour ouvrir son bilan annuel détaillé.</p>
-                <p>• <b>Déplier/Replier :</b> Cliquez sur la petite flèche (▶/▾) à côté du nom de la classe.</p>
-                <p>• <b>Renommer :</b> Faites un <b>clic droit</b> sur le nom d'une classe ou d'un élève.</p>
+                <p>• <b>Déplier/Replier :</b> Utilisez le bouton <b>"Tout Déplier/Replier"</b> ou cliquez sur la flèche (▶/▾) d'une classe.</p>
+                <p>• <b>Renommer/Supprimer :</b> Faites un <b>clic droit</b> sur le nom d'une classe ou d'un élève pour ouvrir les options.</p>
                 <p>• <b>Ajouter un élève :</b> Cliquez sur le <b>+ bleu</b> à droite du nom de la classe.</p>
 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">📊 Statistiques & Recherche</h3>
-                <p>• <b>Recherche :</b> Utilisez la barre en haut pour trouver un élève et afficher son historique complet.</p>
-                <p>• <b>Lecture des Stats :</b> Les compteurs affichent <b>Total (Excusés)</b>. <br>
-                   <i>Exemple : "3(1)" signifie 3 absences au total, dont 1 excusée.</i></p>
-                <p>• <b>Totaux :</b> En vue mensuelle, chaque classe affiche ses totaux quotidiens. Une ligne de synthèse globale se trouve en bas du tableau.</p>
+                <h3 style="color:var(--blue); border-bottom: 2px solid #eee; padding-bottom: 5px;">📊 Tableau de Bord & Stats</h3>
+                <p>• <b>Accès :</b> Cliquez sur le bouton <b>"Tableau de Bord"</b> pour basculer vers la vue analytique.</p>
+                <p>• <b>Graphiques :</b> Visualisez la répartition des absences (Excusées vs Non-justifiées) pour l'ensemble de l'école.</p>
+                <p>• <b>Bilan Directeur :</b> Un récapitulatif par classe permet d'identifier rapidement les taux d'absentéisme les plus élevés.</p>
+                <p>• <b>Export PDF :</b> Le bouton <b>"Télécharger Bilan PDF"</b> génère un rapport officiel pour la direction.</p>
 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">🔴 Gestion des Absences</h3>
+                <h3 style="color:var(--blue); border-bottom: 2px solid #eee; padding-bottom: 5px;">🔴 Gestion des Absences</h3>
                 <p>Cliquez sur une cellule pour changer l'état de l'élève :<br>
-                • ⬜ <b>Vide</b> : Présent.<br>
-                • <span style="color:var(--absent)"><b>A</b></span> : Absent (non justifié).<br>
-                • <span style="color:#d4ac0d"><b>Exc</b></span> : Excusé (justifié).</p>
+                • ⬜ <b>Case Vide</b> : Présent.<br>
+                • <span style="color:var(--absent); font-weight:bold;">A</span> : Absent (non justifié).<br>
+                • <span style="color:#d4ac0d; font-weight:bold;">Exc</span> : Excusé (justifié).</p>
 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">📅 Calendrier & Vue</h3>
-                <p>• <b>Vue Mensuelle :</b> Cliquez sur un mois en haut. Cliquez sur ⬅ pour revenir à l'année.</p>
-                <p>• <b>Résumé du jour :</b> Cliquez sur le <b>numéro du jour</b> (ex: "14") pour voir la liste de tous les absents de l'école.</p>
-                <p>• <b>Vue Annuelle :</b> Affiche le cumul de chaque mois pour chaque classe et pour l'école.</p>
+                <h3 style="color:var(--blue); border-bottom: 2px solid #eee; padding-bottom: 5px;">📅 Calendrier & Vacances</h3>
+                <p>• <b>Vue Mensuelle :</b> Cliquez sur un mois en haut pour pointer les absences. Cliquez sur ⬅ pour revenir au cumul annuel.</p>
+                <p>• <b>Résumé du jour :</b> Cliquez sur le <b>numéro du jour</b> (ex: "14") pour voir la liste des absents de toute l'école ce jour-là.</p>
+                <p>• <b>Vacances :</b> Configurez les périodes de fermeture dans <b>Gestion > 🏖️ Vacances</b> pour les griser sur le calendrier.</p>
 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">↕️ Organisation (Drag & Drop)</h3>
-                <p>• <b>Ordre :</b> Utilisez les poignées <span style="color:#bdc3c7">⠿</span> pour déplacer élèves ou classes (transferts possibles entre classes).</p>
+                <h3 style="color:var(--blue); border-bottom: 2px solid #eee; padding-bottom: 5px;">⚙️ Menu Gestion</h3>
+                <p>• 💾 <b>Backup/Restore :</b> Exportez vos données en <code>.json</code> pour les sauvegarder localement.</p>
+                <p>• 📥 <b>Import CSV :</b> Permet d'intégrer rapidement vos listes d'élèves depuis Excel.</p>
+                <p>• 🧹 <b>Nettoyage :</b> Deux options disponibles : effacer uniquement les absences (fin de trimestre) ou réinitialisation totale.</p>
 
-                <h3 style="color:var(--blue); border-bottom: 1px solid #eee; padding-bottom: 5px;">⚙️ Menu Gestion</h3>
-                <p>Le bouton <b>"Gestion ▾"</b> regroupe les outils avancés :<br>
-                • 📄 <b>PDF :</b> Génère un bilan complet du mois sélectionné.<br>
-                • 💾 <b>Backup/Restore :</b> Sauvegarde ou recharge vos données (format <code>.json</code>).<br>
-                • 🗑️ <b>Reset :</b> Remise à zéro pour une nouvelle année scolaire.</p>
-
-                <div style="background:#e8f4fd; padding:10px; border-radius:8px; border-left:4px solid var(--blue); margin-top:10px;">
-                    ✅ <b>Note :</b> La synchronisation est automatique. Le voyant vert confirme que vos modifications sont enregistrées sur le Cloud.
+                <div style="background:#f0fff4; padding:12px; border-radius:8px; border-left:4px solid #38a169; margin-top:15px;">
+                    <p style="margin:0; font-size:12px; color:#276749;">
+                        ✅ <b>Synchronisation Cloud :</b> Le voyant en haut à droite confirme que vos données sont partagées en temps réel avec vos collègues.
+                    </p>
                 </div>
             </div>
         `,
@@ -474,6 +503,25 @@ function showStudentStats(cIdx, sIdx) {
         }
     }
     
+	// Basculer l'affichage du menu
+function toggleGestionMenu(event) {
+    event.stopPropagation(); // Empêche la fermeture immédiate
+    document.getElementById("gestionMenu").classList.toggle("show");
+}
+
+// Fermer le menu si on clique à côté
+window.onclick = function(event) {
+    if (!event.target.matches('.btn-main')) {
+        const dropdowns = document.getElementsByClassName("dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            let openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+            }
+        }
+    }
+}
+
     // --- Cloud & Logique ---
     async function loadFromCloud() {
         try {
@@ -568,6 +616,26 @@ function showStudentStats(cIdx, sIdx) {
         }
     }
     
+	function toggleClass(cIdx) {
+    if (!schoolData[cIdx]) return; // Sécurité
+
+    // 1. Inverse l'état de la classe
+    schoolData[cIdx].isOpen = !schoolData[cIdx].isOpen;
+
+    // 2. Vérifie si au moins une classe est ouverte pour mettre à jour les boutons
+    const anyOpen = schoolData.some(c => c.isOpen);
+    
+    // 3. Mise à jour de tous les boutons qui parlent de déplier/replier
+    document.querySelectorAll('button').forEach(btn => {
+        if (btn.innerText.toLowerCase().includes("déplier") || btn.innerText.toLowerCase().includes("replier")) {
+            btn.innerHTML = anyOpen ? '▲ Tout replier' : '▼ Tout déplier';
+        }
+    });
+
+    // 4. Relance l'affichage
+    renderAll();
+}
+
     // --- Rendu ---
     
     function renderAll() {
@@ -620,8 +688,8 @@ function showStudentStats(cIdx, sIdx) {
         tr.innerHTML = `<td class="col-main">
             <div class="class-name-container">
                 <span class="drag-handle-class">⠿</span>
-                <span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;renderAll();" style="cursor:pointer; font-size:14px;">${classe.isOpen?'▾':'▶'}</span>
-                <span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;renderAll();" 
+                <span onclick="toggleClass(${cIdx})" style="cursor:pointer; font-size:14px;">${classe.isOpen ? '▲' : '▼'}</span>
+                <span onclick="toggleClass(${cIdx})" 
                     oncontextmenu="event.preventDefault(); renameClass(${cIdx})" 
                     style="cursor:pointer; margin-left:8px; flex-grow:1; font-weight:700; font-size:14px; user-select:none; color: ${getClassColor(cIdx)};">
                     ${classe.name}
@@ -747,6 +815,11 @@ function showStudentStats(cIdx, sIdx) {
     }
 
     document.getElementById('globalStats').innerHTML = `Global : &nbsp; <b>${totalA + totalE}</b> Absences au total &nbsp; (dont <b>${totalE}</b> Excusés)`;
+	
+	// À ajouter à la fin de renderAll() pour synchroniser le bouton en permanence
+const isAnyOpen = schoolData.some(c => c.isOpen);
+const btn = document.getElementById('toggleBtn');
+if(btn) btn.innerHTML = isAnyOpen ? "▲ Tout<br>Replier" : "▼ Tout<br>Déplier";
 }
 	
 	function showStudentStats(cIdx, sIdx) {
@@ -834,47 +907,376 @@ function showStudentStats(cIdx, sIdx) {
     document.body.appendChild(modal);
 }
 
-    // --- Fonctions PDF, Import, Reset, etc. ---
+	function openDashboard() {
+    let totalA = 0, totalE = 0;
+    const statsMois = schoolMonths.map(() => 0);
+    const statsClasses = schoolData.map(c => ({ name: c.name, count: 0 }));
+
+    // 1. Collecte des données
+    schoolData.forEach((classe, cIdx) => {
+        classe.students.forEach(st => {
+            Object.keys(st.data).forEach(k => {
+                const mIdx = parseInt(k.split('-')[0]);
+                if (st.data[k] === 'A' || st.data[k] === 'Exc') {
+                    totalA += (st.data[k] === 'A' ? 1 : 0);
+                    totalE += (st.data[k] === 'Exc' ? 1 : 0);
+                    statsMois[mIdx]++;
+                    statsClasses[cIdx].count++;
+                }
+            });
+        });
+    });
+
+    const totalAbsences = totalA + totalE;
+    const maxMois = Math.max(...statsMois) || 1;
+    const maxClasses = Math.max(...statsClasses.map(c => c.count)) || 1;
+
+    // 2. Construction du HTML
+    let html = `
+    <div style="text-align: right; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+        <button onclick="saveDashboardAsPDF()" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:8px; float:right;">
+            💾 Télécharger le Bilan PDF
+        </button>
+        <div style="clear:both;"></div>
+    </div>
+
+    <div id="dashboardPrintArea" style="padding: 10px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px;">
+            <div style="background:#f8f9fa; padding:15px; border-radius:10px; text-align:center; border-top:4px solid var(--absent); border-left:1px solid #eee; border-right:1px solid #eee; border-bottom:1px solid #eee;">
+                <div style="font-size:0.9em; color:#666;">Total Absences</div>
+                <div style="font-size:1.8em; font-weight:bold; color:var(--dark);">${totalAbsences}</div>
+            </div>
+            <div style="background:#f8f9fa; padding:15px; border-radius:10px; text-align:center; border-top:4px solid #d4ac0d; border-left:1px solid #eee; border-right:1px solid #eee; border-bottom:1px solid #eee;">
+                <div style="font-size:0.9em; color:#666;">Dont Excusées</div>
+                <div style="font-size:1.8em; font-weight:bold; color:var(--dark);">${totalE}</div>
+            </div>
+            <div style="background:#f8f9fa; padding:15px; border-radius:10px; text-align:center; border-top:4px solid var(--blue); border-left:1px solid #eee; border-right:1px solid #eee; border-bottom:1px solid #eee;">
+                <div style="font-size:0.9em; color:#666;">Taux de Justification</div>
+                <div style="font-size:1.8em; font-weight:bold; color:var(--dark);">${totalAbsences > 0 ? Math.round((totalE/totalAbsences)*100) : 0}%</div>
+            </div>
+        </div>
+
+        <h4 style="margin-bottom:20px; color:var(--dark); display:flex; align-items:center; font-family:sans-serif;">
+            <span style="margin-right:10px;">📈</span> Évolution mensuelle (Saisonnalité)
+        </h4>
+        <div style="display: flex; align-items: flex-end; height: 140px; gap: 8px; margin-bottom: 50px; padding: 0 10px 25px 10px; border-bottom: 1px solid #eee;">
+            ${statsMois.map((val, i) => `
+                <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:5px;">
+                    <div style="font-size:10px; font-weight:bold; color:var(--blue);">${val > 0 ? val : ''}</div>
+                    <div style="width:100%; background:var(--blue); border-radius:4px 4px 0 0; height:${(val/maxMois)*100}%; min-height:2px; opacity:0.8; -webkit-print-color-adjust: exact;"></div>
+                    <div style="font-size:10px; color:#666; transform: rotate(-45deg); margin-top:12px; white-space:nowrap;">${schoolMonths[i].name.substring(0,3)}.</div>
+                </div>
+            `).join('')}
+        </div>
+
+        <h4 style="margin-bottom:20px; color:var(--dark); display:flex; align-items:center; font-family:sans-serif;">
+            <span style="margin-right:10px;">🏫</span> Comparatif par Classe (Volume d'absences)
+        </h4>
+        <div style="display: flex; align-items: flex-end; height: 140px; gap: 12px; margin-bottom: 20px; padding: 0 10px 45px 10px; border-bottom: 1px solid #eee;">
+            ${statsClasses.map((c) => `
+                <div style="flex:1; min-width:30px; display:flex; flex-direction:column; align-items:center; gap:5px;">
+                    <div style="font-size:10px; font-weight:bold; color:#2c3e50;">${c.count > 0 ? c.count : ''}</div>
+                    <div style="width:100%; background:#34495e; border-radius:4px 4px 0 0; height:${(c.count/maxClasses)*100}%; min-height:2px; opacity:0.7; -webkit-print-color-adjust: exact;"></div>
+                    <div style="font-size:9px; color:#333; font-weight:bold; transform: rotate(-45deg); margin-top:20px; white-space:nowrap; text-align:right;">${c.name}</div>
+                </div>
+            `).join('')}
+        </div>
+    </div>`;
+
+    showCustomModal("Tableau de Bord de l'École", html, "850px");
+}
+
+/// --- PARTIE 3 : PDF, RÉINITIALISATION ET UTILITAIRES ---
+
+    /**
+     * Génération du rapport PDF global (Bilan Directeur)
+     */
+    function saveDashboardAsPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const today = new Date().toLocaleDateString();
+
+        // Header
+        doc.setFontSize(18);
+        doc.setTextColor(44, 62, 80);
+        doc.text("Bilan Directeur : État des Absences", 105, 20, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Établissement scolaire - Généré le ${today}`, 105, 28, { align: 'center' });
+        doc.line(20, 35, 190, 35);
+
+        // Collecte des données
+        let totalA = 0, totalE = 0;
+        const classRows = [];
+        schoolData.forEach(classe => {
+            let cA = 0, cE = 0;
+            classe.students.forEach(st => {
+                Object.values(st.data).forEach(v => {
+                    if(v === 'A') { totalA++; cA++; }
+                    if(v === 'Exc') { totalE++; cE++; }
+                });
+            });
+            classRows.push([classe.name, (cA + cE), cE, cA]);
+        });
+
+        // Tableau 1 : Synthèse
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.text("1. SYNTHÈSE DE L'ÉCOLE", 20, 45);
+        
+        doc.autoTable({
+            startY: 50,
+            head: [['Indicateur', 'Valeur']],
+            body: [
+                ['Cumul Total des absences', (totalA + totalE).toString()],
+                ['Absences Excusées', totalE.toString()],
+                ['Absences Non Justifiées', totalA.toString()],
+                ['Taux de Justification', (totalA + totalE > 0 ? Math.round((totalE / (totalA + totalE)) * 100) : 0) + '%']
+            ],
+            theme: 'striped',
+            headStyles: { fillColor: [52, 152, 219] }
+        });
+
+        // Tableau 2 : Détail
+        doc.text("2. DÉTAIL PAR CLASSE", 20, doc.lastAutoTable.finalY + 15);
+        doc.autoTable({
+            startY: doc.lastAutoTable.finalY + 20,
+            head: [['Classe', 'Total Absences', 'Excusées', 'Non Justifiées']],
+            body: classRows,
+            headStyles: { fillColor: [44, 62, 80] },
+            styles: { fontSize: 9 },
+            alternateRowStyles: { fillColor: [245, 245, 245] }
+        });
+
+        doc.save(`Bilan_Directeur_${today.replace(/\//g, '-')}.pdf`);
+    }
+
+    /**
+     * PDF Mensuel détaillé
+     */
+    async function exportPDF() {
+        if (activeMonth === null) { alert("Sélectionnez un mois"); return; }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const mConf = monthConfigs[activeMonth];
+
+        doc.setFontSize(14); 
+        doc.text(`Bilan des Absences : ${mConf.name} ${mConf.y}`, 14, 12);
+
+        let tableRows = [];
+        const sortedClasses = [...schoolData].sort((a, b) => a.name.localeCompare(b.name));
+
+        sortedClasses.forEach(classe => {
+            let classStudentsRows = [];
+            const sortedSt = [...classe.students].sort((a, b) => a.name.localeCompare(b.name));
+
+            sortedSt.forEach(st => {
+                let datesA = [], datesExc = [];
+                Object.keys(st.data).filter(k => k.startsWith(activeMonth + '-')).forEach(k => {
+                    const day = k.split('-')[1];
+                    if (st.data[k] === 'A') datesA.push(parseInt(day));
+                    if (st.data[k] === 'Exc') datesExc.push(parseInt(day));
+                });
+
+                const total = datesA.length + datesExc.length;
+                if (total > 0) {
+                    let detail = `${total} abs. (${[...datesA, ...datesExc].sort((a,b)=>a-b).join(', ')})`;
+                    if (datesExc.length > 0) detail += ` dont ${datesExc.length} exc. (${datesExc.sort((a,b)=>a-b).join(', ')})`;
+                    classStudentsRows.push([st.name, detail]);
+                }
+            });
+
+            if (classStudentsRows.length > 0) {
+                tableRows.push([{ content: `CLASSE : ${classe.name}`, colSpan: 2, styles: { fillColor: [230, 230, 230], fontStyle: 'bold' } }]);
+                classStudentsRows.forEach(row => tableRows.push(row));
+            }
+        });
+
+        doc.autoTable({
+            startY: 20,
+            head: [['Élève', 'Détail des absences']],
+            body: tableRows,
+            theme: 'grid',
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [44, 62, 80] }
+        });
+
+        doc.save(`Bilan_Mensuel_${mConf.name}.pdf`);
+    }
+
+    // --- LOGIQUE DE RESET ---
+
+    function resetAnnualAbsences() {
+    const content = `
+        <div style="text-align: center; padding: 10px;">
+            <div style="font-size: 50px; margin-bottom: 15px;">🧹</div>
+            <h3 style="color: #e74c3c; margin-top: 0;">Effacer toutes les absences</h3>
+            <p style="font-size: 14px; color: #2c3e50; line-height: 1.6; margin-bottom: 20px;">
+                Cette action va effacer <b>toutes les absences (A et Exc)</b> enregistrées sur l'année.<br>
+                <span style="color: #7f8c8d;">Les classes et les noms des élèves ne seront pas modifiés.</span>
+            </p>
+            <div style="background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                <p style="margin: 0; font-size: 13px; color: #c53030; font-weight: bold;">
+                    Action irréversible. Voulez-vous continuer ?
+                </p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button onclick="executeFinalReset()" style="background: #e74c3c; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">OUI, NETTOYER</button>
+                <button onclick="this.closest('#customModal').remove()" style="background: #edf2f7; color: #4a5568; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">ANNULER</button>
+            </div>
+        </div>
+    `;
+    showCustomModal("Entretien de la base", content, "450px");
+}
+
+    function executeFinalReset() {
+        schoolData.forEach(classe => {
+            classe.students.forEach(st => { st.data = {}; });
+        });
+        const modal = document.getElementById('customModal');
+        if (modal) modal.remove();
+        save(); // Sauvegarde Cloud
+        renderAll();
+        showCustomModal("Succès", "<div style='text-align:center;padding:20px;'>✅ Toutes les absences ont été supprimées.</div>", "350px");
+    }
+
+    // ÉTAPE 1 : La grande fenêtre d'avertissement
+    async function confirmClearAll() { 
+        const content = `
+            <div style="text-align: center; padding: 10px; font-family: sans-serif;">
+                <div style="font-size: 50px; margin-bottom: 15px;">🚨</div>
+                <h3 style="color: #c0392b; margin-top: 0; text-transform: uppercase;">Zone de Danger</h3>
+                
+                <p style="font-size: 14px; color: #2c3e50; line-height: 1.6; margin-bottom: 20px;">
+                    Vous allez supprimer <b>l'intégralité des données</b>.<br>
+                    <span style="color: #e74c3c; font-weight: bold;">Classes, élèves et absences seront perdus à jamais.</span>
+                </p>
+
+                <div style="background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                    <p style="margin: 0; font-size: 13px; color: #c53030;">
+                        Voulez-vous vraiment accéder à la confirmation finale ?
+                    </p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button onclick="secondConfirmReset()" 
+                            style="background: #c0392b; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                        OUI, JE SUIS SÛR
+                    </button>
+                    <button onclick="this.closest('#customModal').remove()" 
+                            style="background: #edf2f7; color: #4a5568; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                        ANNULER
+                    </button>
+                </div>
+            </div>
+        `;
+        showCustomModal("Alerte de sécurité (1/2)", content, "450px");
+    }
+
+    // ÉTAPE 2 : La confirmation finale "anti-erreur"
+    function secondConfirmReset() {
+        // On ferme la première modale
+        const modal = document.getElementById('customModal');
+        if (modal) modal.remove();
+
+        const content = `
+            <div style="text-align: center; padding: 15px;">
+                <h3 style="color: #c0392b; margin-top: 0;">DERNIÈRE VÉRIFICATION</h3>
+                <p style="font-size: 14px; color: #4a5568;">
+                    C'est votre <b>dernière chance</b> de revenir en arrière.<br>
+                    Cliquez sur le bouton ci-dessous pour TOUT effacer.
+                </p>
+                <button onclick="executeFinalGlobalReset()" 
+                        style="width: 100%; background: #000; color: #fff; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px;">
+                    CONFIRMER LA SUPPRESSION DÉFINITIVE
+                </button>
+                <button onclick="this.closest('#customModal').remove()" 
+                        style="width: 100%; background: none; color: #718096; border: none; margin-top: 10px; cursor: pointer; text-decoration: underline;">
+                    Finalement, j'annule
+                </button>
+            </div>
+        `;
+        showCustomModal("Confirmation finale (2/2)", content, "350px");
+    }
+
+    // ÉTAPE 3 : L'exécution réelle
+    async function executeFinalGlobalReset() {
+        schoolData = []; 
+        excludedDates = []; 
+        await save(); 
+        location.reload(); 
+    }
+
+    // --- ÉDITION & ÉTAT ---
+
     async function deleteClass(cIdx) {
         const confirm = await showModal({ title: '⚠️ Supprimer', content: `Supprimer <b>${schoolData[cIdx].name}</b> ?`, buttons: [{ text: 'Non', action: 'cancel' }, { text: 'Oui', color: 'var(--absent)' }] });
         if (confirm) { schoolData.splice(cIdx,1); save(); renderAll(); }
     }
+
     async function deleteStudent(cIdx, sIdx) {
         const confirm = await showModal({ title: 'Supprimer', content: `Retirer l'élève ?`, buttons: [{ text: 'Non', action: 'cancel' }, { text: 'Oui', color: 'var(--absent)' }] });
         if (confirm) { schoolData[cIdx].students.splice(sIdx,1); save(); renderAll(); }
     }
+
     async function renameClass(cIdx) {
         const n = await showModal({ title: 'Renommer', content: 'Nom :', showInput: true, inputValue: schoolData[cIdx].name, buttons: [{ text: 'Ok', color: 'var(--blue)' }] });
         if (n) { schoolData[cIdx].name = n; save(); renderAll(); }
     }
+
     async function renameStudent(cIdx, sIdx) {
         const n = await showModal({ title: 'Renommer', content: 'Nom :', showInput: true, inputValue: schoolData[cIdx].students[sIdx].name, buttons: [{ text: 'Ok', color: 'var(--blue)' }] });
         if (n) { schoolData[cIdx].students[sIdx].name = n; save(); renderAll(); }
     }
+
     function updateStatus(cIdx, sIdx, key) {
         const st = schoolData[cIdx].students[sIdx];
         const states = ['', 'A', 'Exc'];
         st.data[key] = states[(states.indexOf(st.data[key]||'') + 1) % states.length];
         save(); renderAll();
     }
-    function isToday(mIdx, dNum) { const now = new Date(); const conf = monthConfigs[mIdx]; return now.getDate() === dNum && now.getMonth() === conf.m && now.getFullYear() === conf.y; }
+
+    function isToday(mIdx, dNum) { 
+        const now = new Date(); 
+        const conf = monthConfigs[mIdx]; 
+        return now.getDate() === dNum && now.getMonth() === conf.m && now.getFullYear() === conf.y; 
+    }
+
     function toggleAllClasses() {
+        const btn = document.getElementById('toggleBtn');
+        if (!btn) return;
+
+        // ÉTAPE 1 : On vérifie l'état réel des données
+        // Si au moins une classe est ouverte, isAnyOpen sera 'true'
         const isAnyOpen = schoolData.some(c => c.isOpen);
+        
+        // ÉTAPE 2 : On définit le nouvel état
+        // Si au moins une est ouverte -> on ferme tout (false)
+        // Si tout est fermé -> on ouvre tout (true)
         const newState = !isAnyOpen;
+        
         schoolData.forEach(c => c.isOpen = newState);
         
-        const btn = document.getElementById('toggleBtn');
+        // ÉTAPE 3 : Mise à jour du texte du bouton
         if (newState) {
-            btn.innerHTML = "📁 Tout<br>Replier";
-            btn.style.background = "var(--gray)";
+            btn.innerHTML = "▲ Tout<br>Replier";
         } else {
-            btn.innerHTML = "📂 Tout<br>Déplier";
-            btn.style.background = "var(--success)";
+            btn.innerHTML = "▼ Tout<br>Déplier";
         }
+        
         renderAll();
     }
+
+    // --- IMPORT / EXPORT ---
     
-    function exportJSON() { const a = document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify({schoolData, excludedDates})); a.download="backup.json"; a.click(); }
+    function exportJSON() { 
+        const a = document.createElement('a'); 
+        a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify({schoolData, excludedDates})); 
+        a.download="backup_absences.json"; 
+        a.click(); 
+    }
+
     async function importJSON(e) { 
         const file = e.target.files[0]; if (!file) return;
         const reader = new FileReader();
@@ -887,8 +1289,7 @@ function showStudentStats(cIdx, sIdx) {
         };
         reader.readAsText(file);
     }
-    async function confirmClearAll() { const c = await showModal({ title: 'RESET', content: 'Effacer TOUT ?', buttons: [{ text: 'Non', action: 'cancel' }, { text: 'OUI', color: 'var(--absent)' }] }); if(c){ schoolData=[]; excludedDates=[]; await save(); location.reload(); } }
-    
+
     function importCSV(e) {
         const file = e.target.files[0]; if (!file) return;
         const r = new FileReader();
@@ -906,74 +1307,7 @@ function showStudentStats(cIdx, sIdx) {
         r.readAsText(file);
     }
 
-    async function exportPDF() {
-        if (activeMonth === null) { alert("Sélectionnez un mois"); return; }
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        const monthName = monthConfigs[activeMonth].name;
-        const year = monthConfigs[activeMonth].y;
-
-        doc.setFontSize(14); 
-        doc.text(`Bilan des Absences : ${monthName} ${year}`, 14, 12);
-
-        let tableRows = [];
-        const sortedClasses = [...schoolData].sort((a, b) => a.name.localeCompare(b.name));
-
-        sortedClasses.forEach(classe => {
-            let classStudentsRows = [];
-            const sortedStudents = [...classe.students].sort((a, b) => a.name.localeCompare(b.name));
-
-            sortedStudents.forEach(st => {
-                let datesA = [], datesExc = [];
-                Object.keys(st.data).filter(k => k.startsWith(activeMonth + '-')).forEach(k => {
-                    const day = k.split('-')[1];
-                    if (st.data[k] === 'A') datesA.push(parseInt(day));
-                    if (st.data[k] === 'Exc') datesExc.push(parseInt(day));
-                });
-
-                const allAbsenceDates = [...datesA, ...datesExc].sort((a, b) => a - b);
-                const totalAbsences = allAbsenceDates.length;
-
-                if (totalAbsences > 0) {
-                    let texteAbs = totalAbsences > 1 ? "absences" : "absence";
-                    let detailTexte = `${totalAbsences} ${texteAbs}`;
-                    detailTexte += ` (${allAbsenceDates.join(', ')})`;
-
-                    if (datesExc.length > 0) {
-                        let texteExc = datesExc.length > 1 ? "excusées" : "excusée";
-                        detailTexte += `, dont ${datesExc.length} ${texteExc}`;
-                        datesExc.sort((a, b) => a - b);
-                        detailTexte += ` (${datesExc.join(', ')})`;
-                    }
-                    classStudentsRows.push([st.name, detailTexte]);
-                }
-            });
-
-            if (classStudentsRows.length > 0) {
-                tableRows.push([{ 
-                    content: `CLASSE : ${classe.name}`, 
-                    colSpan: 2, 
-                    styles: { fillColor: [230, 230, 230], fontStyle: 'bold' } 
-                }]);
-                classStudentsRows.forEach(row => tableRows.push(row));
-            }
-        });
-
-        doc.autoTable({
-            startY: 20,
-            head: [['Élève', 'Détail des absences']],
-            body: tableRows,
-            theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 3 },
-            headStyles: { fillColor: [44, 62, 80] },
-            columnStyles: {
-                0: { cellWidth: 50, fontStyle: 'bold' },
-                1: { cellWidth: 'auto' }
-            }
-        });
-
-        doc.save(`Bilan_Absences_${monthName}_${year}.pdf`);
-    }
+    // --- MODALES SPÉCIALISÉES ---
 
     async function showDailySummary(mIdx, dNum, mName) {
         const key = mIdx + '-' + dNum;
@@ -982,17 +1316,38 @@ function showStudentStats(cIdx, sIdx) {
             if (st.data[key] === 'A') abs.push(`<li><b>[${c.name}]</b> ${st.name}</li>`);
             if (st.data[key] === 'Exc') exc.push(`<li><b>[${c.name}]</b> ${st.name}</li>`);
         }));
-        await showModal({ title: `📅 ${dNum} ${mName}`, content: `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"><div><h3 style="color:var(--absent); font-size:11px;">Absents</h3><ul>${abs.join('')||'<li>-</li>'}</ul></div><div><h3 style="color:#d4ac0d; font-size:11px;">Excusés</h3><ul>${exc.join('')||'<li>-</li>'}</ul></div></div>`, buttons: [{ text: 'Fermer', color: 'var(--blue)' }] });
+        await showModal({ 
+            title: `📅 ${dNum} ${mName}`, 
+            content: `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div><h3 style="color:var(--absent); font-size:11px;">Absents</h3><ul>${abs.join('')||'<li>-</li>'}</ul></div>
+                <div><h3 style="color:#d4ac0d; font-size:11px;">Excusés</h3><ul>${exc.join('')||'<li>-</li>'}</ul></div>
+            </div>`, 
+            buttons: [{ text: 'Fermer', color: 'var(--blue)' }] 
+        });
     }
 
     async function openVacationModal() {
         let list = excludedDates.map((v, i) => `<li>${v.name} <button class="btn-del" onclick="removeVacation(${i})">x</button></li>`).join('');
-        await showModal({ title: '🏖️ Vacances', content: `<input type="text" id="vacName" placeholder="Nom" class="modal-input"><input type="date" id="vacStart" class="modal-input"><input type="date" id="vacEnd" class="modal-input"><button onclick="addVacation()" class="btn-main" style="background:var(--success); width:100%; margin-top:5px;">Ajouter</button><ul>${list}</ul>`, buttons: [{ text: 'Ok' }] });
-        location.reload();
+        await showModal({ 
+            title: '🏖️ Vacances', 
+            content: `<input type="text" id="vacName" placeholder="Nom" class="modal-input">
+                      <input type="date" id="vacStart" class="modal-input">
+                      <input type="date" id="vacEnd" class="modal-input">
+                      <button onclick="addVacation()" class="btn-main" style="background:var(--success); width:100%; margin-top:5px;">Ajouter</button>
+                      <ul style="margin-top:10px; max-height:150px; overflow-y:auto;">${list}</ul>`, 
+            buttons: [{ text: 'Fermer' }] 
+        });
+        refreshSchoolMonths();
+        renderAll();
     }
-    window.addVacation = () => { const n=document.getElementById('vacName').value, s=document.getElementById('vacStart').value, e=document.getElementById('vacEnd').value; if(n&&s&&e){ excludedDates.push({name:n,start:s,end:e}); save(); openVacationModal(); } };
+
+    window.addVacation = () => { 
+        const n=document.getElementById('vacName').value, s=document.getElementById('vacStart').value, e=document.getElementById('vacEnd').value; 
+        if(n&&s&&e){ excludedDates.push({name:n,start:s,end:e}); save(); openVacationModal(); } 
+    };
     window.removeVacation = (i) => { excludedDates.splice(i,1); save(); openVacationModal(); };
 
+    // Lancement
     loadFromCloud();
 </script>
 </body>
