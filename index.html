@@ -142,6 +142,26 @@
         
         .stats-footer { margin-top: 20px; padding: 15px; background: var(--dark); color: white; border-radius: 10px; display: flex; gap: 20px; justify-content: center; font-size: 13px; }
         .sync-status { font-size: 10px; color: #95a5a6; font-style: italic; }
+		
+		@media (max-width: 768px) {
+			/* Cache les colonnes de jours qui ne sont pas "aujourd'hui" sur mobile */
+		.day-col:not(.today-highlight), 
+		.cell-abs:not(.today-highlight) {
+			display: none;
+		}
+    
+		/* Ajuste la largeur de la colonne fixe pour laisser de la place */
+		.col-main {
+			width: 180px; 
+			min-width: 180px;
+		}
+
+		/* Permet au header du mois de s'adapter */
+		.month-header.active {
+			col-span: 1 !important;
+		}
+	}
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -284,6 +304,11 @@
     });
 }
 
+	function getClassColor(idx) {
+		const colors = ['#3498db', '#e67e22', '#9b59b6', '#27ae60', '#d35400', '#2980b9', '#8e44ad', '#16a085'];
+		return colors[idx % colors.length];
+	}
+	
 	function toggleDropdown() {
         document.getElementById("toolsDropdown").classList.toggle("show");
     }
@@ -396,22 +421,32 @@
 	
     // --- Rendu ---
     function renderAll() {
+    const isMobile = window.innerWidth <= 768;
+    
     // Header
     const mRow = document.getElementById('monthRow'); const dRow = document.getElementById('dayRow');
     while(mRow.cells.length > 1) mRow.deleteCell(1); while(dRow.cells.length > 1) dRow.deleteCell(1);
+    
     schoolMonths.forEach((m, idx) => {
         if (activeMonth !== null && activeMonth !== idx) return;
         let th = document.createElement('th'); th.className = 'month-header' + (activeMonth === idx ? ' active' : '');
         th.innerText = (activeMonth === idx) ? `⬅ ${m.name}` : m.name;
         th.onclick = () => { activeMonth = (activeMonth === idx) ? null : idx; renderAll(); };
+        
         if (activeMonth === idx) {
-            th.colSpan = m.days.length;
+            // Sur mobile, le colspan est réduit à 1 car seul "aujourd'hui" est affiché
+            th.colSpan = isMobile ? 1 : m.days.length;
+            
             m.days.forEach(day => { 
-                let dTh = document.createElement('th'); 
-                dTh.className = 'day-col' + (isToday(idx, day.num) ? ' today-highlight' : ''); 
-                dTh.innerHTML = `${day.label}<br>${day.num}`; 
-                dTh.onclick = (e) => { e.stopPropagation(); showDailySummary(idx, day.num, m.name); };
-                dRow.appendChild(dTh); 
+                const today = isToday(idx, day.num);
+                // Sur mobile, on ne crée l'élément que si c'est aujourd'hui
+                if (!isMobile || today) {
+                    let dTh = document.createElement('th'); 
+                    dTh.className = 'day-col' + (today ? ' today-highlight' : ''); 
+                    dTh.innerHTML = `${day.label}<br>${day.num}`; 
+                    dTh.onclick = (e) => { e.stopPropagation(); showDailySummary(idx, day.num, m.name); };
+                    dRow.appendChild(dTh);
+                }
             });
         } else { th.colSpan = 1; dRow.appendChild(document.createElement('th')); }
         mRow.appendChild(th);
@@ -440,7 +475,7 @@
                 <span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;renderAll();" style="cursor:pointer; font-size:14px;">${classe.isOpen?'▾':'▶'}</span>
                 <span onclick="schoolData[${cIdx}].isOpen=!schoolData[${cIdx}].isOpen;renderAll();" 
                     oncontextmenu="event.preventDefault(); renameClass(${cIdx})" 
-                    style="cursor:pointer; margin-left:8px; flex-grow:1; font-weight:700; font-size:14px; user-select:none;"
+                    style="cursor:pointer; margin-left:8px; flex-grow:1; font-weight:700; font-size:14px; user-select:none; color: ${getClassColor(cIdx)};"
                     title="Clic : déplier | Clic droit : renommer">
                     ${classe.name}
                 </span>
@@ -449,7 +484,12 @@
                 <button class="btn-del" onclick="deleteClass(${cIdx})">🗑️</button>
             </div>
         </td>`;
-        schoolMonths.forEach((m, mIdx) => { if (activeMonth===null || activeMonth===mIdx) tr.innerHTML += `<td colspan="${activeMonth===mIdx?m.days.length:1}"></td>`; });
+        
+        schoolMonths.forEach((m, mIdx) => { 
+            if (activeMonth===null || activeMonth===mIdx) {
+                tr.innerHTML += `<td colspan="${(isMobile && activeMonth === mIdx) ? 1 : (activeMonth === mIdx ? m.days.length : 1)}"></td>`; 
+            }
+        });
         tbody.appendChild(tr);
 
         if(classe.isOpen) {
@@ -470,12 +510,19 @@
                         <button class="btn-del" onclick="deleteStudent(${cIdx},${sIdx})">×</button>
                     </div>
                 </td>`;
+                
                 schoolMonths.forEach((m, mIdx) => {
-                    if (activeMonth === mIdx) m.days.forEach(day => { 
-                        let k = mIdx+'-'+day.num; let val = st.data[k]||''; 
-                        let highlight = isToday(mIdx, day.num) ? ' today-highlight' : '';
-                        stHtml += `<td class="cell-abs st-${val||'none'}${highlight}" onclick="updateStatus(${cIdx},${sIdx},'${k}')">${val}</td>`; 
-                    });
+                    if (activeMonth === mIdx) {
+                        m.days.forEach(day => { 
+                            const today = isToday(mIdx, day.num);
+                            // Sur mobile, on ne génère que la cellule d'aujourd'hui
+                            if (!isMobile || today) {
+                                let k = mIdx+'-'+day.num; let val = st.data[k]||''; 
+                                let highlight = today ? ' today-highlight' : '';
+                                stHtml += `<td class="cell-abs st-${val||'none'}${highlight}" onclick="updateStatus(${cIdx},${sIdx},'${k}')">${val}</td>`; 
+                            }
+                        });
+                    }
                     else if (activeMonth === null) stHtml += `<td></td>`;
                 });
                 trSt.innerHTML = stHtml; tbody.appendChild(trSt);
